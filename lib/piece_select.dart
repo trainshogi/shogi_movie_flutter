@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:shogi_movie_flutter/piece_upsert.dart';
 
 class PieceSelect extends StatefulWidget {
   const PieceSelect({Key? key}) : super(key: key);
@@ -31,6 +32,22 @@ class _PieceSelectState extends State<PieceSelect> {
                 ),
               ),
               onPressed: () {},
+            ),
+            ElevatedButton(
+              child: const Text('変更'),
+              style: ElevatedButton.styleFrom(
+                primary: Colors.blueAccent,
+                onPrimary: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const PieceUpsert()),
+                );
+              },
             ),
           ]
         ),

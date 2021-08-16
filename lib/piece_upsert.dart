@@ -17,6 +17,11 @@ class _PieceUpsertState extends State<PieceUpsert> {
 
   String pieceNameJapanese = "歩";
   File? imageFile;
+  Image? image;
+  Image? transImage;
+
+  // タッチした点を覚えておく
+  final _points = <Offset>[];
 
   void _getAndSaveImageFromDevice(ImageSource source) async {
     // 撮影/選択したFileが返ってくる
@@ -32,7 +37,43 @@ class _PieceUpsertState extends State<PieceUpsert> {
     setState(() {
       // this.imageFile = imageFile;
       this.imageFile = savedFile; //変更
+      image = Image.memory(savedFile!.readAsBytesSync());
+      transImage = Image.memory(
+          savedFile.readAsBytesSync(),
+          color: const Color.fromRGBO(255, 255, 255, 0)
+      );
     });
+  }
+
+  // 点を追加
+  void _addPoint(TapDownDetails details) {
+    // setState()にリストを更新する関数を渡して状態を更新
+    setState(() {
+      _points.add(details.localPosition);
+    });
+  }
+  
+  Widget imageAndPainter() {
+    if (imageFile == null) {
+      return const Icon(Icons.no_sim);
+    }
+    else {
+      return Stack(
+        children: [
+          image!,
+          GestureDetector(
+            // TapDownイベントを検知
+            onTapDown: _addPoint,
+            // カスタムペイント
+            child: CustomPaint(
+              painter: MyPainter(_points),
+              // タッチを有効にするため、childが必要
+              child: transImage,
+            ),
+          ),
+        ],
+      );
+    }
   }
 
   @override
@@ -48,9 +89,7 @@ class _PieceUpsertState extends State<PieceUpsert> {
             children: [
               Padding(
                 padding: const EdgeInsets.all(10),
-                child: (imageFile == null)
-                    ? const Icon(Icons.no_sim)
-                    : Image.memory(imageFile!.readAsBytesSync()),
+                child: imageAndPainter(),
               ),
               Container(
                 padding: const EdgeInsets.all(10.0),
@@ -71,5 +110,25 @@ class _PieceUpsertState extends State<PieceUpsert> {
         )
       )
     );
+  }
+}
+
+class MyPainter extends CustomPainter{
+  final List<Offset> _points;
+  final _rectPaint = Paint()..color = Colors.blue;
+
+  MyPainter(this._points);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    // 記憶している点を描画する
+    for (var offset in _points) {
+      canvas.drawRect(Rect.fromCenter(center: offset, width: 20.0, height: 20.0), _rectPaint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) {
+    return true;
   }
 }

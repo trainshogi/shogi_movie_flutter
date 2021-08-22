@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:shogi_movie_flutter/frame_painter.dart';
 
 import 'file_controller.dart';
 
@@ -19,6 +20,7 @@ class _PieceUpsertState extends State<PieceUpsert> {
   File? imageFile;
   Image? image;
   Image? transImage;
+  int movePointIndex = 0;
 
   // タッチした点を覚えておく
   final _points = <Offset>[];
@@ -46,11 +48,41 @@ class _PieceUpsertState extends State<PieceUpsert> {
   }
 
   // 点を追加
-  void _addPoint(TapDownDetails details) {
+  void _addPoint(TapUpDetails details) {
     // setState()にリストを更新する関数を渡して状態を更新
     setState(() {
       _points.add(details.localPosition);
     });
+  }
+
+  // singleTapに制御がいかないようにここは必要。
+  void _catchDoubleTap() {
+  }
+
+  void _deletePoint(TapDownDetails details) {
+    if (_points.isNotEmpty) {
+      int removePointIndex = getNearestPointIndex(_points, details.localPosition);
+      setState(() {
+        _points.removeAt(removePointIndex);
+      });
+    }
+  }
+
+  void _setMovePointIndex(DragStartDetails details) {
+    if (_points.isNotEmpty) {
+      movePointIndex = getNearestPointIndex(_points, details.localPosition);
+      setState(() {
+        _points[movePointIndex] = details.localPosition;
+      });
+    }
+  }
+
+  void _movePoint(DragUpdateDetails details) {
+    if (_points.isNotEmpty) {
+      setState(() {
+        _points[movePointIndex] = details.localPosition;
+      });
+    }
   }
   
   Widget imageAndPainter() {
@@ -62,11 +94,17 @@ class _PieceUpsertState extends State<PieceUpsert> {
         children: [
           image!,
           GestureDetector(
-            // TapDownイベントを検知
-            onTapDown: _addPoint,
+            // 追加イベント
+            onTapUp: _addPoint,
+            // 削除イベント
+            onDoubleTap: _catchDoubleTap,
+            onDoubleTapDown: _deletePoint,
+            // 移動イベント
+            onPanStart: _setMovePointIndex,
+            onPanUpdate: _movePoint,
             // カスタムペイント
             child: CustomPaint(
-              painter: MyPainter(_points),
+              painter: FramePainter(_points),
               // タッチを有効にするため、childが必要
               child: transImage,
             ),
@@ -110,25 +148,5 @@ class _PieceUpsertState extends State<PieceUpsert> {
         )
       )
     );
-  }
-}
-
-class MyPainter extends CustomPainter{
-  final List<Offset> _points;
-  final _rectPaint = Paint()..color = Colors.blue;
-
-  MyPainter(this._points);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    // 記憶している点を描画する
-    for (var offset in _points) {
-      canvas.drawRect(Rect.fromCenter(center: offset, width: 20.0, height: 20.0), _rectPaint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(CustomPainter oldDelegate) {
-    return true;
   }
 }

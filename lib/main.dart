@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shogi_movie_flutter/piece_select.dart';
+import 'package:shogi_movie_flutter/piece_select_and_edit.dart';
 
 void main() {
   runApp(const MyApp());
@@ -69,7 +70,12 @@ class _MyHomePageState extends State<MyHomePage> {
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
-              onPressed: () {},
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const PieceSelectAndEdit()),
+                );
+              },
             ),
           ],
         ),

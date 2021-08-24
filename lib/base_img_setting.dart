@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:shogi_movie_flutter/record.dart';
 
 import 'file_controller.dart';
 import 'frame_painter.dart';
@@ -161,8 +162,13 @@ class _BaseImgSettingState extends State<BaseImgSetting> {
                   Container(
                       padding: const EdgeInsets.all(10.0),
                       child: ElevatedButton(
-                        child: const Text('ライブラリから選択'),
-                        onPressed: () {},
+                        child: const Text('スタート'),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const Record()),
+                          );
+                        },
                       )),
                 ],
               ),

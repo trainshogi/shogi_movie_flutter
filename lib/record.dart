@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:shogi_movie_flutter/result.dart';
 
 class Record extends StatefulWidget {
   const Record({Key? key}) : super(key: key);
@@ -36,13 +37,18 @@ class _RecordState extends State<Record> {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text('１手目：７六歩'),
+                  const Text('１手目：７六歩'),
                   imageOrIcon(),
                   Container(
                       padding: const EdgeInsets.all(10.0),
                       child: ElevatedButton(
                         child: const Text('投了'),
-                        onPressed: () {},
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const Result()),
+                          );
+                        },
                       )),
                 ],
               ),

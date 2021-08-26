@@ -16,11 +16,23 @@ class PieceUpsert extends StatefulWidget {
 
 class _PieceUpsertState extends State<PieceUpsert> {
 
-  String pieceNameJapanese = "歩";
+  // variables
   File? imageFile;
   Image? image;
   Image? transImage;
   int movePointIndex = 0;
+  int pieceNameIndex = 0;
+  String pieceNameJapanese = "歩兵";
+
+  // static variables
+  final pieceNameListJapanese = [
+    "歩兵", "香車", "桂馬", "銀将", "金将", "角行", "飛車", "王将",
+    "と金", "成香", "成桂", "成銀", "竜馬", "龍王"
+  ];
+  final pieceNameListEnglish = [
+    "fu", "kyo", "kei", "gin", "kin", "kaku", "hisya", "ou",
+    "nfu", "nkyo", "nkei", "ngin", "nkaku", "nhisya"
+  ];
 
   // タッチした点を覚えておく
   final _points = <Offset>[];
@@ -34,7 +46,8 @@ class _PieceUpsertState extends State<PieceUpsert> {
       return;
     }
 
-    var savedFile = await FileController.saveLocalImage(imageFile, 'fu.jpg'); //追加
+    var savedFile = await FileController.saveLocalImage(
+        imageFile, pieceNameListEnglish[pieceNameIndex] + '.jpg'); //追加
 
     setState(() {
       // this.imageFile = imageFile;
@@ -129,6 +142,10 @@ class _PieceUpsertState extends State<PieceUpsert> {
             children: [
               Padding(
                 padding: const EdgeInsets.all(10),
+                child: Text(pieceNameListJapanese[pieceNameIndex] + 'の画像設定'),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(10),
                 child: imageAndPainter(),
               ),
               Container(
@@ -138,13 +155,74 @@ class _PieceUpsertState extends State<PieceUpsert> {
                   onPressed: () {
                     _getAndSaveImageFromDevice(ImageSource.camera); // New Line
                   },
-                )),
-              Container(
-                padding: const EdgeInsets.all(10.0),
-                child: ElevatedButton(
-                  child: const Text('ライブラリから選択'),
-                  onPressed: () {},
-                )),
+                )
+              ),
+              Row(
+                children: [
+                  Container(
+                      padding: const EdgeInsets.all(10.0),
+                      child: ElevatedButton(
+                        child: const Text('前の駒を設定'),
+                        onPressed: () {
+                          if (pieceNameIndex == 0) {
+                            showDialog(
+                              context: context,
+                              builder: (_) {
+                                return AlertDialog(
+                                  title: const Text("エラー"),
+                                  content: const Text("前の駒は存在しません。"),
+                                  actions: <Widget>[
+                                    // ボタン領域
+                                    TextButton(
+                                      child: const Text("OK"),
+                                      onPressed: () => Navigator.pop(context),
+                                    ),
+                                  ],
+                                );
+                              },
+                            );
+                          }
+                          else {
+                            setState(() {
+                              pieceNameIndex -= 1;
+                            });
+                          }
+                        },
+                      )
+                  ),
+                  Container(
+                      padding: const EdgeInsets.all(10.0),
+                      child: ElevatedButton(
+                        child: const Text('次の駒を設定'),
+                        onPressed: () {
+                          if (pieceNameIndex == pieceNameListJapanese.length - 1) {
+                            showDialog(
+                              context: context,
+                              builder: (_) {
+                                return AlertDialog(
+                                  title: const Text("完了"),
+                                  content: const Text("駒の設定が終了しました。"),
+                                  actions: <Widget>[
+                                    // ボタン領域
+                                    TextButton(
+                                      child: const Text("OK"),
+                                      onPressed: () => Navigator.pop(context),
+                                    ),
+                                  ],
+                                );
+                              },
+                            );
+                          }
+                          else {
+                            setState(() {
+                              pieceNameIndex += 1;
+                            });
+                          }
+                        },
+                      )
+                  ),
+                ],
+              )
             ],
           ),
         )

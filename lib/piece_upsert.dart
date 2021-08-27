@@ -127,6 +127,65 @@ class _PieceUpsertState extends State<PieceUpsert> {
     }
   }
 
+  void _showErrorAlertDialog(String text) {
+    showDialog(
+      context: context,
+      builder: (_) {
+        return AlertDialog(
+          title: const Text("エラー"),
+          content: Text(text),
+          actions: <Widget>[
+            // ボタン領域
+            TextButton(
+              child: const Text("OK"),
+              onPressed: () => Navigator.pop(context),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _prevPieceButtonPushed() {
+    if (_points.length < 3) {
+      _showErrorAlertDialog('駒の枠が正しく設定されていません。');
+    }
+    else if (pieceNameIndex == 0) {
+      _showErrorAlertDialog('前の駒は存在しません。');
+    }
+    else {
+      setState(() {
+        // initialize
+        imageFile = null;
+        image = null;
+        transImage = null;
+        _points.clear();
+        // set index
+        pieceNameIndex -= 1;
+      });
+    }
+  }
+
+  void _nextPieceButtonPushed() {
+    if (_points.length < 3) {
+      _showErrorAlertDialog('駒の枠が正しく設定されていません。');
+    }
+    else if (pieceNameIndex == pieceNameListJapanese.length - 1) {
+      _showErrorAlertDialog('駒の設定が終了しました。');
+    }
+    else {
+      setState(() {
+        // initialize
+        imageFile = null;
+        image = null;
+        transImage = null;
+        _points.clear();
+        // set index
+        pieceNameIndex += 1;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -163,62 +222,14 @@ class _PieceUpsertState extends State<PieceUpsert> {
                       padding: const EdgeInsets.all(10.0),
                       child: ElevatedButton(
                         child: const Text('前の駒を設定'),
-                        onPressed: () {
-                          if (pieceNameIndex == 0) {
-                            showDialog(
-                              context: context,
-                              builder: (_) {
-                                return AlertDialog(
-                                  title: const Text("エラー"),
-                                  content: const Text("前の駒は存在しません。"),
-                                  actions: <Widget>[
-                                    // ボタン領域
-                                    TextButton(
-                                      child: const Text("OK"),
-                                      onPressed: () => Navigator.pop(context),
-                                    ),
-                                  ],
-                                );
-                              },
-                            );
-                          }
-                          else {
-                            setState(() {
-                              pieceNameIndex -= 1;
-                            });
-                          }
-                        },
+                        onPressed: () => _prevPieceButtonPushed(),
                       )
                   ),
                   Container(
                       padding: const EdgeInsets.all(10.0),
                       child: ElevatedButton(
                         child: const Text('次の駒を設定'),
-                        onPressed: () {
-                          if (pieceNameIndex == pieceNameListJapanese.length - 1) {
-                            showDialog(
-                              context: context,
-                              builder: (_) {
-                                return AlertDialog(
-                                  title: const Text("完了"),
-                                  content: const Text("駒の設定が終了しました。"),
-                                  actions: <Widget>[
-                                    // ボタン領域
-                                    TextButton(
-                                      child: const Text("OK"),
-                                      onPressed: () => Navigator.pop(context),
-                                    ),
-                                  ],
-                                );
-                              },
-                            );
-                          }
-                          else {
-                            setState(() {
-                              pieceNameIndex += 1;
-                            });
-                          }
-                        },
+                        onPressed: () => _nextPieceButtonPushed(),
                       )
                   ),
                 ],

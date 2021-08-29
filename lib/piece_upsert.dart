@@ -37,6 +37,23 @@ class _PieceUpsertState extends State<PieceUpsert> {
   // タッチした点を覚えておく
   final _points = <Offset>[];
 
+  void _getImageFromDevice() async {
+    File savedFile = await FileController.loadLocalImage(
+        '駒1', pieceNameListEnglish[pieceNameIndex] + '.jpg');
+
+    if (savedFile.existsSync()) {
+      setState(() {
+        // this.imageFile = imageFile;
+        imageFile = savedFile; //変更
+        image = Image.memory(savedFile.readAsBytesSync());
+        transImage = Image.memory(
+            savedFile.readAsBytesSync(),
+            color: const Color.fromRGBO(255, 255, 255, 0)
+        );
+      });
+    }
+  }
+
   void _getAndSaveImageFromDevice(ImageSource source) async {
     // 撮影/選択したFileが返ってくる
     final ImagePicker _picker = ImagePicker();
@@ -47,17 +64,19 @@ class _PieceUpsertState extends State<PieceUpsert> {
     }
 
     var savedFile = await FileController.saveLocalImage(
-        imageFile, pieceNameListEnglish[pieceNameIndex] + '.jpg'); //追加
+        imageFile, '駒1', pieceNameListEnglish[pieceNameIndex] + '.jpg'); //追加
 
-    setState(() {
-      // this.imageFile = imageFile;
-      this.imageFile = savedFile; //変更
-      image = Image.memory(savedFile!.readAsBytesSync());
-      transImage = Image.memory(
-          savedFile.readAsBytesSync(),
-          color: const Color.fromRGBO(255, 255, 255, 0)
-      );
-    });
+    if (savedFile.existsSync()) {
+      setState(() {
+        // this.imageFile = imageFile;
+        this.imageFile = savedFile; //変更
+        image = Image.memory(savedFile.readAsBytesSync());
+        transImage = Image.memory(
+            savedFile.readAsBytesSync(),
+            color: const Color.fromRGBO(255, 255, 255, 0)
+        );
+      });
+    }
   }
 
   // 点を追加
@@ -147,8 +166,11 @@ class _PieceUpsertState extends State<PieceUpsert> {
   }
 
   void _prevPieceButtonPushed() {
-    if (_points.length < 3) {
-      _showErrorAlertDialog('駒の枠が正しく設定されていません。');
+    if (imageFile == null) {
+      _showErrorAlertDialog('駒の画像が設定されていません。');
+    }
+    else if (_points.length < 3) {
+      _showErrorAlertDialog('駒の枠が設定されていません。');
     }
     else if (pieceNameIndex == 0) {
       _showErrorAlertDialog('前の駒は存在しません。');
@@ -163,12 +185,16 @@ class _PieceUpsertState extends State<PieceUpsert> {
         // set index
         pieceNameIndex -= 1;
       });
+      _getImageFromDevice();
     }
   }
 
   void _nextPieceButtonPushed() {
-    if (_points.length < 3) {
-      _showErrorAlertDialog('駒の枠が正しく設定されていません。');
+    if (imageFile == null) {
+      _showErrorAlertDialog('駒の画像が設定されていません。');
+    }
+    else if (_points.length < 3) {
+      _showErrorAlertDialog('駒の枠が設定されていません。');
     }
     else if (pieceNameIndex == pieceNameListJapanese.length - 1) {
       _showErrorAlertDialog('駒の設定が終了しました。');
@@ -183,7 +209,14 @@ class _PieceUpsertState extends State<PieceUpsert> {
         // set index
         pieceNameIndex += 1;
       });
+      _getImageFromDevice();
     }
+  }
+
+  @override
+  void initState() {
+    _getImageFromDevice();
+    super.initState();
   }
 
   @override

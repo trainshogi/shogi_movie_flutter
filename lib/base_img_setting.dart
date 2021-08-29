@@ -16,7 +16,6 @@ class BaseImgSetting extends StatefulWidget {
 }
 
 class _BaseImgSettingState extends State<BaseImgSetting> {
-  String pieceNameJapanese = "歩";
   File? imageFile;
   Image? image;
   Image? transImage;
@@ -34,7 +33,7 @@ class _BaseImgSettingState extends State<BaseImgSetting> {
       return;
     }
 
-    var savedFile = await FileController.saveLocalImage(imageFile, 'fu.jpg'); //追加
+    var savedFile = await FileController.saveLocalImage(imageFile, 'tmp', 'base.jpg'); //追加
 
     setState(() {
       // this.imageFile = imageFile;

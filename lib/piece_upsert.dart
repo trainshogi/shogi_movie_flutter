@@ -40,6 +40,8 @@ class _PieceUpsertState extends State<PieceUpsert> {
   void _getImageFromDevice() async {
     File savedFile = await FileController.loadLocalImage(
         '駒1', pieceNameListEnglish[pieceNameIndex] + '.jpg');
+    File pointFile = await FileController.loadLocalFile(
+        '駒1', pieceNameListEnglish[pieceNameIndex] + '.txt');
 
     if (savedFile.existsSync()) {
       setState(() {
@@ -51,6 +53,13 @@ class _PieceUpsertState extends State<PieceUpsert> {
             color: const Color.fromRGBO(255, 255, 255, 0)
         );
       });
+
+      // _points file
+      if (pointFile.existsSync()) {
+        setState(() {
+          _points.addAll(string2Offsets(pointFile.readAsStringSync()));
+        });
+      }
     }
   }
 
@@ -176,6 +185,7 @@ class _PieceUpsertState extends State<PieceUpsert> {
       _showErrorAlertDialog('前の駒は存在しません。');
     }
     else {
+      _saveList();
       setState(() {
         // initialize
         imageFile = null;
@@ -200,6 +210,7 @@ class _PieceUpsertState extends State<PieceUpsert> {
       _showErrorAlertDialog('駒の設定が終了しました。');
     }
     else {
+      _saveList();
       setState(() {
         // initialize
         imageFile = null;
@@ -211,6 +222,27 @@ class _PieceUpsertState extends State<PieceUpsert> {
       });
       _getImageFromDevice();
     }
+  }
+
+  Future<void> _saveList() async {
+    String converted = _points.join(":");
+    print(converted);
+    FileController.saveLocalFile(
+        converted, '駒1', pieceNameListEnglish[pieceNameIndex] + '.txt'); //追加
+  }
+
+  List<Offset> string2Offsets(String row) {
+    var offsets = <Offset>[];
+    List<String> rowOffsets = row.split(':');
+    for (var rowOffset in rowOffsets) {
+      var formatted = rowOffset
+          .replaceAll(" ", "")
+          .replaceFirst("Offset(", "")
+          .replaceFirst(")", "")
+          .split(",");
+      offsets.add(Offset(double.parse(formatted[0]), double.parse(formatted[1])));
+    }
+    return offsets;
   }
 
   @override

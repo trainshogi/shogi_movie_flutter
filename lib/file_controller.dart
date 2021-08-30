@@ -20,8 +20,8 @@ class FileController {
 
   // ドキュメントの画像を取得する。
   static Future loadLocalImage(String dirName, String filename) async {
-    final path = await localPath;
-    final imagePath = '$path/$dirName/$filename';
+    final path = await directoryPath(dirName);
+    final imagePath = '$path/$filename';
     return File(imagePath);
   }
 
@@ -38,6 +38,22 @@ class FileController {
     // var savedFile = await image.copy(imagePath);
     // でもOK
 
+    return savedFile;
+  }
+
+  // ドキュメントのファイルを取得する。
+  static Future loadLocalFile(String dirName, String filename) async {
+    final path = await directoryPath(dirName);
+    final filePath = '$path/$filename';
+    return File(filePath);
+  }
+
+  // テキストをドキュメントへ保存する。
+  static Future saveLocalFile(String text, String dirName, String filename) async {
+    final path = await directoryPath(dirName);
+    final filePath = '$path/$filename';
+    File file = File(filePath);
+    var savedFile = await file.writeAsString(text);
     return savedFile;
   }
 }

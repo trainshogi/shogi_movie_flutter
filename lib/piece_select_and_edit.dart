@@ -41,7 +41,7 @@ class _PieceSelectAndEditState extends State<PieceSelectAndEdit> {
           onPressed: () {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => const PieceUpsert()),
+              MaterialPageRoute(builder: (context) => PieceUpsert(dirName: text)),
             );
           },
         ),

@@ -8,7 +8,8 @@ import 'package:shogi_movie_flutter/frame_painter.dart';
 import 'file_controller.dart';
 
 class PieceUpsert extends StatefulWidget {
-  const PieceUpsert({Key? key}) : super(key: key);
+  final String dirName;
+  const PieceUpsert({Key? key, required this.dirName}) : super(key: key);
 
   @override
   _PieceUpsertState createState() => _PieceUpsertState();
@@ -22,6 +23,7 @@ class _PieceUpsertState extends State<PieceUpsert> {
   Image? transImage;
   int movePointIndex = 0;
   int pieceNameIndex = 0;
+  String pieceGroupName = ""; // initialize in initState
   String pieceNameJapanese = "歩兵";
 
   // static variables
@@ -39,9 +41,9 @@ class _PieceUpsertState extends State<PieceUpsert> {
 
   void _getImageFromDevice() async {
     File savedFile = await FileController.loadLocalImage(
-        '駒1', pieceNameListEnglish[pieceNameIndex] + '.jpg');
+        pieceGroupName, pieceNameListEnglish[pieceNameIndex] + '.jpg');
     File pointFile = await FileController.loadLocalFile(
-        '駒1', pieceNameListEnglish[pieceNameIndex] + '.txt');
+        pieceGroupName, pieceNameListEnglish[pieceNameIndex] + '.txt');
 
     if (savedFile.existsSync()) {
       setState(() {
@@ -73,7 +75,7 @@ class _PieceUpsertState extends State<PieceUpsert> {
     }
 
     var savedFile = await FileController.saveLocalImage(
-        imageFile, '駒1', pieceNameListEnglish[pieceNameIndex] + '.jpg'); //追加
+        imageFile, pieceGroupName, pieceNameListEnglish[pieceNameIndex] + '.jpg'); //追加
 
     if (savedFile.existsSync()) {
       setState(() {
@@ -228,7 +230,7 @@ class _PieceUpsertState extends State<PieceUpsert> {
     String converted = _points.join(":");
     print(converted);
     FileController.saveLocalFile(
-        converted, '駒1', pieceNameListEnglish[pieceNameIndex] + '.txt'); //追加
+        converted, pieceGroupName, pieceNameListEnglish[pieceNameIndex] + '.txt'); //追加
   }
 
   List<Offset> string2Offsets(String row) {
@@ -247,6 +249,7 @@ class _PieceUpsertState extends State<PieceUpsert> {
 
   @override
   void initState() {
+    pieceGroupName = widget.dirName;
     _getImageFromDevice();
     super.initState();
   }

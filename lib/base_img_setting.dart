@@ -9,7 +9,8 @@ import 'file_controller.dart';
 import 'frame_painter.dart';
 
 class BaseImgSetting extends StatefulWidget {
-  const BaseImgSetting({Key? key}) : super(key: key);
+  final String dirName;
+  const BaseImgSetting({Key? key, required this.dirName}) : super(key: key);
 
   @override
   _BaseImgSettingState createState() => _BaseImgSettingState();
@@ -59,12 +60,12 @@ class _BaseImgSettingState extends State<BaseImgSetting> {
         context: context,
         builder: (_) {
           return AlertDialog(
-            title: Text("エラー"),
-            content: Text("枠の角は4点より多く設定できません"),
+            title: const Text("エラー"),
+            content: const Text("枠の角は4点より多く設定できません"),
             actions: <Widget>[
               // ボタン領域
               TextButton(
-                child: Text("OK"),
+                child: const Text("OK"),
                 onPressed: () => Navigator.pop(context),
               ),
             ],
@@ -151,7 +152,7 @@ class _BaseImgSettingState extends State<BaseImgSetting> {
                     child: imageAndPainter(),
                   ),
                   Container(
-                      padding: const EdgeInsets.all(10.0),
+                      padding: const EdgeInsets.all(3.0),
                       child: ElevatedButton(
                         child: const Text('カメラで撮影'),
                         onPressed: () {
@@ -159,7 +160,14 @@ class _BaseImgSettingState extends State<BaseImgSetting> {
                         },
                       )),
                   Container(
-                      padding: const EdgeInsets.all(10.0),
+                      padding: const EdgeInsets.all(3.0),
+                      child: ElevatedButton(
+                        child: const Text('初期駒チェック'),
+                        onPressed: () {
+                        },
+                      )),
+                  Container(
+                      padding: const EdgeInsets.all(3.0),
                       child: ElevatedButton(
                         child: const Text('スタート'),
                         onPressed: () {

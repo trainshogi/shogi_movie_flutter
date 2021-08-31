@@ -29,7 +29,7 @@ class _PieceSelectState extends State<PieceSelect> {
           onPressed: () {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => const BaseImgSetting()),
+              MaterialPageRoute(builder: (context) => BaseImgSetting(dirName: text)),
             );
           },
         )),

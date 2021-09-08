@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shogi_movie_flutter/record.dart';
 
@@ -134,6 +135,32 @@ class _BaseImgSettingState extends State<BaseImgSetting> {
     }
   }
 
+
+  static const platform = MethodChannel('samples.flutter.dev/battery');
+
+  String _batteryLevel = 'Unknown battery level.';
+
+  Future<void> _getBatteryLevel() async {
+    // Get battery level.
+    String batteryLevel;
+    try {
+      final int result = await platform.invokeMethod('getBatteryLevel');
+      batteryLevel = 'Battery level at $result % .';
+    } on PlatformException catch (e) {
+      batteryLevel = "Failed to get battery level: '${e.message}'.";
+    }
+
+    setState(() {
+      _batteryLevel = batteryLevel;
+    });
+  }
+
+  @override
+  void initState() {
+    _getBatteryLevel();
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -151,6 +178,7 @@ class _BaseImgSettingState extends State<BaseImgSetting> {
                     padding: const EdgeInsets.all(10),
                     child: imageAndPainter(),
                   ),
+                  Text(_batteryLevel),
                   Container(
                       padding: const EdgeInsets.all(3.0),
                       child: ElevatedButton(

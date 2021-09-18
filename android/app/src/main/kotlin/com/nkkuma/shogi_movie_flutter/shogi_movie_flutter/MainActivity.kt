@@ -71,9 +71,14 @@ class MainActivity: FlutterActivity() {
                 val srcPath = call.argument<String>("srcPath").toString()
                 val dirName = call.argument<String>("dirName").toString()
                 val points = call.argument<String>("points").toString()
+                Log.d("OpenCV", srcPath)
+                Log.d("OpenCV", dirName)
+                Log.d("OpenCV", points)
 
                 // example: perspective covert
-                val convertedpath = toPerspectiveTransformationImg(srcpath = srcPath)
+                val pointsFloatList = offsetString2FloatList(points)
+                Log.d("OpenCV", pointsFloatList.toString())
+                val convertedpath = toPerspectiveTransformationImg(srcpath = srcPath, points = pointsFloatList)
                 result.success(convertedpath)
             } else {
                 result.notImplemented()
@@ -91,6 +96,19 @@ class MainActivity: FlutterActivity() {
             batteryLevel = intent!!.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) * 100 / intent.getIntExtra(BatteryManager.EXTRA_SCALE, -1)
         }
         return batteryLevel
+    }
+
+    private val SPACE_SIZE = 64
+
+    private fun offsetString2FloatList(offsetString: String): List<List<Float>> {
+        val trimmed = offsetString.replace("Offset", "").replace(" ", "")
+        val strlist = trimmed.substring(2, trimmed.length - 2).split("),(")
+        var result = mutableListOf<List<Float>>()
+        strlist.forEach{ offsetString ->
+            val offsetList = offsetString.split(",")
+            result.add(listOf<Float>(offsetList[0].toFloat(), offsetList[1].toFloat()))
+        }
+        return result
     }
 
     // Bitmap を回転
@@ -156,12 +174,14 @@ class MainActivity: FlutterActivity() {
     }
 
     // パースペクティブ変換
-    private fun toPerspectiveTransformationImg(srcpath: String): String? {
+    private fun toPerspectiveTransformationImg(srcpath: String, points: List<List<Float>>): String? {
         // Bitmapを読み込み
         val img = readImageFromFileWithRotate(srcpath)
         // BitmapをMatに変換する
         var matSource = Mat()
         Utils.bitmapToMat(img, matSource)
+        Log.d("OpenCV", matSource.size().toString())
+
 
         // 前処理
         var matDest = Mat()
@@ -169,49 +189,24 @@ class MainActivity: FlutterActivity() {
         Imgproc.cvtColor(matSource, matDest, Imgproc.COLOR_BGR2GRAY)
         // 2値化
         Imgproc.threshold(matDest, matDest, 0.0, 255.0, Imgproc.THRESH_OTSU)
-        // Cannyアルゴリズムを使ったエッジ検出
-        var matCanny = Mat()
-        Imgproc.Canny(matDest, matCanny,75.0, 200.0)
-        // 膨張
-        var matKernel = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, Size(9.0, 9.0))
-        Imgproc.dilate(matCanny, matCanny, matKernel)
-
-        // 輪郭を取得
-        var vctContours = ArrayList<MatOfPoint>()
-        var hierarchy = Mat()
-        Imgproc.findContours(matCanny, vctContours, hierarchy, Imgproc.RETR_LIST, Imgproc.CHAIN_APPROX_SIMPLE)
-
-        // 面積順にソート
-        vctContours.sortByDescending {
-            Imgproc.contourArea(it, false)
-        }
         // 最大の四角形を走査、変換元の矩形にする
         var ptSrc = Mat(4, 2, CvType.CV_32F)
-        for (vctContour in vctContours) {
-            // 輪郭をまるめる
-            val approxCurve = MatOfPoint2f()
-            val contour2f = MatOfPoint2f()
-            vctContour.convertTo(contour2f, CvType.CV_32FC2)
-            var arclen = Imgproc.arcLength(contour2f, true)
-            Imgproc.approxPolyDP(contour2f, approxCurve, 0.025 * arclen, true)
-            // 4辺の矩形なら採用
-            if (approxCurve.total() == 4L) {
-                for (i in 0..3) {
-                    val pt = approxCurve.get(i, 0)
-                    ptSrc.put(i, 0, floatArrayOf(pt[0].toFloat(), pt[1].toFloat()))
-                }
-                break
-            }
-        }
+        ptSrc.put(0, 0, floatArrayOf(points[3][0], points[3][1]))
+        ptSrc.put(1, 0, floatArrayOf(points[2][0], points[2][1]))
+        ptSrc.put(2, 0, floatArrayOf(points[1][0], points[1][1]))
+        ptSrc.put(3, 0, floatArrayOf(points[0][0], points[0][1]))
+        Log.d("OpenCV", ptSrc.toString())
+
 
         // 変換先の矩形（元画像の幅を最大にした名刺比率にする）
-        val width = img!!.width
-        val height = (width / 1.654).toInt()
+        val width = SPACE_SIZE*9
+        val height = SPACE_SIZE*9
         var ptDst = Mat(4, 2, CvType.CV_32F)
         ptDst.put(0, 0, floatArrayOf(0.0f, height.toFloat()))
         ptDst.put(1, 0, floatArrayOf(width.toFloat(), height.toFloat()))
         ptDst.put(2, 0, floatArrayOf(width.toFloat(), 0.0f))
         ptDst.put(3, 0, floatArrayOf(0.0f, 0.0f))
+        Log.d("OpenCV", ptDst.toString())
         // 変換行列
         var matTrans = Imgproc.getPerspectiveTransform(ptSrc, ptDst)
         // 変換

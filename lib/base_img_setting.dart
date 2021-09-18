@@ -157,23 +157,25 @@ class _BaseImgSettingState extends State<BaseImgSetting> {
 
   static const platformPieceDetect = MethodChannel('com.nkkuma.dev/piece_detect');
 
-  String _pieceDetect = 'Unknown battery level.';
+  // String _pieceDetect = 'Unknown battery level.';
 
   Future<void> _detectPiecePlace() async {
     // Get battery level.
-    String pieceDetect;
+    String result = "";
     try {
-      final int result = await platformPieceDetect.invokeMethod(
+      result = await platformPieceDetect.invokeMethod(
           'piece_detect',
           <String, String>{'srcPath': imageFile!.path, 'points': _points.toString(), 'dirName': widget.dirName}
       );
-      pieceDetect = 'Battery level at $result % .';
+      // pieceDetect = 'Battery level at $result % .';
     } on PlatformException catch (e) {
-      pieceDetect = "Failed to get battery level: '${e.message}'.";
+      print("Failed to get battery level: '${e.message}'.");
+      // pieceDetect = "Failed to get battery level: '${e.message}'.";
     }
 
     setState(() {
-      _pieceDetect = pieceDetect;
+      // _pieceDetect = pieceDetect;
+      image = Image.file(File(result));
     });
   }
 
@@ -201,6 +203,7 @@ class _BaseImgSettingState extends State<BaseImgSetting> {
                     child: imageAndPainter(),
                   ),
                   Text(_batteryLevel),
+                  // Text(_pieceDetect),
                   Container(
                       padding: const EdgeInsets.all(3.0),
                       child: ElevatedButton(

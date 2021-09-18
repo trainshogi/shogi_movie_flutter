@@ -1,7 +1,7 @@
 package com.nkkuma.shogi_movie_flutter.shogi_movie_flutter
 
 
-import androidx.annotation.NonNull;
+import androidx.annotation.NonNull
 import io.flutter.embedding.engine.FlutterEngine
 
 import io.flutter.embedding.android.FlutterActivity
@@ -20,6 +20,7 @@ import android.graphics.BitmapFactory
 import android.graphics.Matrix
 import android.media.ExifInterface
 import android.os.Environment
+import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import org.opencv.android.OpenCVLoader
@@ -57,22 +58,23 @@ class MainActivity: FlutterActivity() {
             }
         }
 
-//        if (!OpenCVLoader.initDebug())
-//            Log.e("OpenCV", "Unable to load OpenCV!");
-//        else
-//            Log.d("OpenCV", "OpenCV loaded Successfully!");
-
         MethodChannel(flutterEngine!!.getDartExecutor(), CHANNEL_PieceDetect).setMethodCallHandler{ call, result ->
             if (call.method == "piece_detect") {
+
+                // load opencv
+                if (!OpenCVLoader.initDebug())
+                    Log.e("OpenCV", "Unable to load OpenCV!")
+                else
+                    Log.d("OpenCV", "OpenCV loaded Successfully!")
+
+                // get variable
                 val srcPath = call.argument<String>("srcPath").toString()
                 val dirName = call.argument<String>("dirName").toString()
                 val points = call.argument<String>("points").toString()
-                val batteryLevel = getBatteryLevel()
-                if (batteryLevel != -1) {
-                    result.success(batteryLevel)
-                } else {
-                    result.error("UNAVAILABLE", "Battery level not available.", null)
-                }
+
+                // example: perspective covert
+                val convertedpath = toPerspectiveTransformationImg(srcpath = srcPath)
+                result.success(convertedpath)
             } else {
                 result.notImplemented()
             }
@@ -128,7 +130,7 @@ class MainActivity: FlutterActivity() {
             val timeStamp: String = SimpleDateFormat("yyyyMMdd_HHmmss").format(Date())
             val storageDir: File? = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
             if (storageDir == null) {
-                return null;
+                return null
             }
 
             val file = File.createTempFile(
@@ -136,20 +138,20 @@ class MainActivity: FlutterActivity() {
                     ".jpeg",
                     storageDir)
             if (file == null) {
-                return null;
+                return null
             }
 
             // PNGファイルで保存
             val out = FileOutputStream(file)
             img.compress(Bitmap.CompressFormat.JPEG, 100, out)
-            out.flush();
-            out.close();
+            out.flush()
+            out.close()
 
-            return file.absolutePath;
+            return file.absolutePath
         }
         catch (e: IOException) {
             e.printStackTrace()
-            return null;
+            return null
         }
     }
 
@@ -172,12 +174,12 @@ class MainActivity: FlutterActivity() {
         Imgproc.Canny(matDest, matCanny,75.0, 200.0)
         // 膨張
         var matKernel = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, Size(9.0, 9.0))
-        Imgproc.dilate(matCanny, matCanny, matKernel);
+        Imgproc.dilate(matCanny, matCanny, matKernel)
 
         // 輪郭を取得
         var vctContours = ArrayList<MatOfPoint>()
         var hierarchy = Mat()
-        Imgproc.findContours(matCanny, vctContours, hierarchy, Imgproc.RETR_LIST, Imgproc.CHAIN_APPROX_SIMPLE);
+        Imgproc.findContours(matCanny, vctContours, hierarchy, Imgproc.RETR_LIST, Imgproc.CHAIN_APPROX_SIMPLE)
 
         // 面積順にソート
         vctContours.sortByDescending {
@@ -198,13 +200,13 @@ class MainActivity: FlutterActivity() {
                     val pt = approxCurve.get(i, 0)
                     ptSrc.put(i, 0, floatArrayOf(pt[0].toFloat(), pt[1].toFloat()))
                 }
-                break;
+                break
             }
         }
 
         // 変換先の矩形（元画像の幅を最大にした名刺比率にする）
-        val width = img!!.width;
-        val height = (width / 1.654).toInt();
+        val width = img!!.width
+        val height = (width / 1.654).toInt()
         var ptDst = Mat(4, 2, CvType.CV_32F)
         ptDst.put(0, 0, floatArrayOf(0.0f, height.toFloat()))
         ptDst.put(1, 0, floatArrayOf(width.toFloat(), height.toFloat()))
@@ -213,11 +215,28 @@ class MainActivity: FlutterActivity() {
         // 変換行列
         var matTrans = Imgproc.getPerspectiveTransform(ptSrc, ptDst)
         // 変換
-        var matResult = Mat(width, height, matSource.type());
-        Imgproc.warpPerspective(matSource, matResult, matTrans, Size(width.toDouble(), height.toDouble()));
+        var matResult = Mat(width, height, matSource.type())
+        Imgproc.warpPerspective(matSource, matResult, matTrans, Size(width.toDouble(), height.toDouble()))
+
+        // transform and resize image
+
+        // equalizeHist
+
+        // for koma
+            // create mask image by fillConvexPoly
+            // for koma-size
+                // resize koma image
+                    // for koma-rotate
+                        // rotate koma image
+                        // threshold to 127
+                        // matchTemplate > threshold(0.65)
+                        // add place to foundlist
+
+        // create json
+
 
         // Mat を Bitmap に変換して保存
-        var imgResult = Bitmap.createBitmap(width, height, img!!.config);
+        var imgResult = Bitmap.createBitmap(width, height, img!!.config)
         Utils.matToBitmap(matResult, imgResult)
 
         return saveImageToFile(imgResult)

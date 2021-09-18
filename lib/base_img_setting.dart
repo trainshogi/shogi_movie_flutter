@@ -22,6 +22,7 @@ class _BaseImgSettingState extends State<BaseImgSetting> {
   Image? image;
   Image? transImage;
   int movePointIndex = 0;
+  GlobalKey globalKeyForPainter = GlobalKey();
 
   // タッチした点を覚えておく
   final _points = <Offset>[];
@@ -112,6 +113,7 @@ class _BaseImgSettingState extends State<BaseImgSetting> {
     }
     else {
       return Stack(
+        key: globalKeyForPainter,
         children: [
           image!,
           GestureDetector(
@@ -157,15 +159,26 @@ class _BaseImgSettingState extends State<BaseImgSetting> {
 
   static const platformPieceDetect = MethodChannel('com.nkkuma.dev/piece_detect');
 
-  // String _pieceDetect = 'Unknown battery level.';
+  List<Offset> absolutePoints2relativePoints(List<Offset> points) {
+    // get PainterSize
+    RenderBox? box = globalKeyForPainter.currentContext?.findRenderObject() as RenderBox?;
+    print("ウィジェットのサイズ :${box?.size}");
+    // convert to relative
+    var relativePoints = <Offset>[];
+    points.forEach((Offset point) {
+      relativePoints.add(Offset(100 * point.dx / box!.size.width, 100 * point.dy / box.size.height));
+    });
+    return relativePoints;
+  }
 
   Future<void> _detectPiecePlace() async {
     // Get battery level.
     String result = "";
     try {
+      List<Offset> relativePoints = absolutePoints2relativePoints(_points);
       result = await platformPieceDetect.invokeMethod(
           'piece_detect',
-          <String, String>{'srcPath': imageFile!.path, 'points': _points.toString(), 'dirName': widget.dirName}
+          <String, String>{'srcPath': imageFile!.path, 'points': relativePoints.toString(), 'dirName': widget.dirName}
       );
       // pieceDetect = 'Battery level at $result % .';
     } on PlatformException catch (e) {

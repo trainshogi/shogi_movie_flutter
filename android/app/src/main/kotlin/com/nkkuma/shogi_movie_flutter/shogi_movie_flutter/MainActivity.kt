@@ -78,7 +78,7 @@ class MainActivity: FlutterActivity() {
                 // example: perspective covert
                 val pointsFloatList = offsetString2FloatList(points)
                 Log.d("OpenCV", pointsFloatList.toString())
-                val convertedpath = toPerspectiveTransformationImg(srcpath = srcPath, points = pointsFloatList)
+                val convertedpath = toPerspectiveTransformationImg(srcpath = srcPath, relativePoints = pointsFloatList)
                 result.success(convertedpath)
             } else {
                 result.notImplemented()
@@ -107,6 +107,14 @@ class MainActivity: FlutterActivity() {
         strlist.forEach{ offsetString ->
             val offsetList = offsetString.split(",")
             result.add(listOf<Float>(offsetList[0].toFloat(), offsetList[1].toFloat()))
+        }
+        return result
+    }
+
+    private fun relativePoints2absolutePoints(relativePoints: List<List<Float>>, imageWidth: Int, imageHeight: Int): List<List<Float>> {
+        var result = mutableListOf<List<Float>>()
+        relativePoints.forEach{ relativePoint ->
+            result.add(listOf<Float>(relativePoint[0]*imageWidth/100.toFloat(), relativePoint[1]*imageHeight/100.toFloat()))
         }
         return result
     }
@@ -174,7 +182,7 @@ class MainActivity: FlutterActivity() {
     }
 
     // パースペクティブ変換
-    private fun toPerspectiveTransformationImg(srcpath: String, points: List<List<Float>>): String? {
+    private fun toPerspectiveTransformationImg(srcpath: String, relativePoints: List<List<Float>>): String? {
         // Bitmapを読み込み
         val img = readImageFromFileWithRotate(srcpath)
         // BitmapをMatに変換する
@@ -182,38 +190,41 @@ class MainActivity: FlutterActivity() {
         Utils.bitmapToMat(img, matSource)
         Log.d("OpenCV", matSource.size().toString())
 
-
         // 前処理
         var matDest = Mat()
         // グレースケール変換
         Imgproc.cvtColor(matSource, matDest, Imgproc.COLOR_BGR2GRAY)
         // 2値化
         Imgproc.threshold(matDest, matDest, 0.0, 255.0, Imgproc.THRESH_OTSU)
-        // 最大の四角形を走査、変換元の矩形にする
+
+        // convert relativePoints to absolutePoints
+        val absolutePoints = relativePoints2absolutePoints(relativePoints, img!!.getWidth(), img!!.getHeight())
+        Log.d("OpenCV", absolutePoints.toString())
+
+        // sort points if need
+
+        // set points as ptSrc
         var ptSrc = Mat(4, 2, CvType.CV_32F)
-        ptSrc.put(0, 0, floatArrayOf(points[3][0], points[3][1]))
-        ptSrc.put(1, 0, floatArrayOf(points[2][0], points[2][1]))
-        ptSrc.put(2, 0, floatArrayOf(points[1][0], points[1][1]))
-        ptSrc.put(3, 0, floatArrayOf(points[0][0], points[0][1]))
+        ptSrc.put(0, 0, floatArrayOf(absolutePoints[0][0], absolutePoints[0][1]))
+        ptSrc.put(1, 0, floatArrayOf(absolutePoints[1][0], absolutePoints[1][1]))
+        ptSrc.put(2, 0, floatArrayOf(absolutePoints[2][0], absolutePoints[2][1]))
+        ptSrc.put(3, 0, floatArrayOf(absolutePoints[3][0], absolutePoints[3][1]))
         Log.d("OpenCV", ptSrc.toString())
 
-
-        // 変換先の矩形（元画像の幅を最大にした名刺比率にする）
+        // set target as ptDst
         val width = SPACE_SIZE*9
         val height = SPACE_SIZE*9
         var ptDst = Mat(4, 2, CvType.CV_32F)
-        ptDst.put(0, 0, floatArrayOf(0.0f, height.toFloat()))
-        ptDst.put(1, 0, floatArrayOf(width.toFloat(), height.toFloat()))
-        ptDst.put(2, 0, floatArrayOf(width.toFloat(), 0.0f))
-        ptDst.put(3, 0, floatArrayOf(0.0f, 0.0f))
+        ptDst.put(0, 0, floatArrayOf(0.0f, 0.0f))
+        ptDst.put(1, 0, floatArrayOf(0.0f, (height - 1).toFloat()))
+        ptDst.put(2, 0, floatArrayOf((width - 1).toFloat(), (height - 1).toFloat()))
+        ptDst.put(3, 0, floatArrayOf((width - 1).toFloat(), 0.0f))
         Log.d("OpenCV", ptDst.toString())
-        // 変換行列
+        // Transformation matrix
         var matTrans = Imgproc.getPerspectiveTransform(ptSrc, ptDst)
-        // 変換
+        // transform and resize image
         var matResult = Mat(width, height, matSource.type())
         Imgproc.warpPerspective(matSource, matResult, matTrans, Size(width.toDouble(), height.toDouble()))
-
-        // transform and resize image
 
         // equalizeHist
 

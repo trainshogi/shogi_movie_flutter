@@ -41,6 +41,18 @@ class MainActivity: FlutterActivity() {
 
     private val CHANNEL_PieceDetect = "com.nkkuma.dev/piece_detect"
 
+    private val SPACE_SIZE = 64
+    val pieceNameListJapanese = listOf(
+        "歩兵", "香車", "桂馬", "銀将", "金将", "角行", "飛車", "王将",
+        "と金", "成香", "成桂", "成銀", "竜馬", "龍王"
+    )
+    val pieceNameListEnglish = listOf(
+        "fu", "kyo", "kei", "gin", "kin", "kaku", "hisya", "ou",
+        "nfu", "nkyo", "nkei", "ngin", "nkaku", "nhisya"
+    )
+    val pieceSizeList = listOf(64, 62, 60, 58, 56, 54, 52, 50, 48, 47, 46, 45, 43, 44, 42, 40, 37, 35)
+    val pieceRotateList = listOf(20, 15, 10, 8, 5, 4, 3, 2, 1, 0, -1, -2, -3, -4, -5, -8,  -10, -15, -20)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 //        GeneratedPluginRegistrant.registerWith(this)
@@ -78,7 +90,7 @@ class MainActivity: FlutterActivity() {
                 // example: perspective covert
                 val pointsFloatList = offsetString2FloatList(points)
                 Log.d("OpenCV", pointsFloatList.toString())
-                val convertedpath = toPerspectiveTransformationImg(srcpath = srcPath, relativePoints = pointsFloatList)
+                val convertedpath = toPerspectiveTransformationImg(srcpath = srcPath, dirName = dirName, relativePoints = pointsFloatList)
                 result.success(convertedpath)
             } else {
                 result.notImplemented()
@@ -97,8 +109,6 @@ class MainActivity: FlutterActivity() {
         }
         return batteryLevel
     }
-
-    private val SPACE_SIZE = 64
 
     private fun offsetString2FloatList(offsetString: String): List<List<Float>> {
         val trimmed = offsetString.replace("Offset", "").replace(" ", "")
@@ -182,7 +192,7 @@ class MainActivity: FlutterActivity() {
     }
 
     // パースペクティブ変換
-    private fun toPerspectiveTransformationImg(srcpath: String, relativePoints: List<List<Float>>): String? {
+    private fun toPerspectiveTransformationImg(srcpath: String, dirName: String, relativePoints: List<List<Float>>): String? {
         // Bitmapを読み込み
         val img = readImageFromFileWithRotate(srcpath)
         // BitmapをMatに変換する
@@ -223,27 +233,40 @@ class MainActivity: FlutterActivity() {
         // Transformation matrix
         var matTrans = Imgproc.getPerspectiveTransform(ptSrc, ptDst)
         // transform and resize image
-        var matResult = Mat(width, height, matSource.type())
-        Imgproc.warpPerspective(matSource, matResult, matTrans, Size(width.toDouble(), height.toDouble()))
+        val matCropped = Mat(width, height, matSource.type())
+        Imgproc.warpPerspective(matSource, matCropped, matTrans, Size(width.toDouble(), height.toDouble()))
 
         // equalizeHist
+//        val matHist = Mat(width, height, matCropped.type())
+//        Imgproc.equalizeHist(matCropped, matHist)
 
         // for koma
+        pieceNameListEnglish.forEach { pieceName ->
+            // Bitmapを読み込み
+            val komaImg = readImageFromFileWithRotate("${dirName}/${pieceName}.jpg")
+            // BitmapをMatに変換する
+            var matKoma = Mat()
+            Utils.bitmapToMat(komaImg, matKoma)
             // create mask image by fillConvexPoly
             // for koma-size
+            pieceSizeList.forEach { pieceSize ->
                 // resize koma image
-                    // for koma-rotate
-                        // rotate koma image
-                        // threshold to 127
-                        // matchTemplate > threshold(0.65)
-                        // add place to foundlist
+                // for koma-rotate
+                pieceRotateList.forEach { pieceRotate ->
+                    // rotate koma image
+                    // threshold to 127
+                    // matchTemplate > threshold(0.65)
+                    // add place to foundlist
+                }
+            }
+        }
 
         // create json
 
 
         // Mat を Bitmap に変換して保存
         var imgResult = Bitmap.createBitmap(width, height, img!!.config)
-        Utils.matToBitmap(matResult, imgResult)
+        Utils.matToBitmap(matCropped, imgResult)
 
         return saveImageToFile(imgResult)
     }

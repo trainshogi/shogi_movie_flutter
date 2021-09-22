@@ -61,7 +61,8 @@ class _PieceUpsertState extends State<PieceUpsert> {
       // _points file
       if (pointFile.existsSync()) {
         setState(() {
-          _points.addAll(relativePoints2absolutePoints(string2Offsets(pointFile.readAsStringSync()), getPainterSize()));
+          List<Offset> absolutePoints = string2Offsets(pointFile.readAsStringSync().split("/")[0]);
+          _points.addAll(absolutePoints);
         });
       }
     }
@@ -234,10 +235,11 @@ class _PieceUpsertState extends State<PieceUpsert> {
   }
 
   Future<void> _saveList() async {
-    String converted = absolutePoints2relativePoints(_points, getPainterSize()).join(":");
-    print(converted);
-    FileController.saveLocalFile(
-        converted, pieceGroupName, pieceNameListEnglish[pieceNameIndex] + '.txt'); //追加
+    String absoluteConverted = _points.join(":");
+    String relativeConverted = absolutePoints2relativePoints(_points, getPainterSize()).join(":");
+    print(absoluteConverted + "/" + relativeConverted);
+    FileController.saveLocalFile(absoluteConverted + "/" + relativeConverted,
+        pieceGroupName, pieceNameListEnglish[pieceNameIndex] + '.txt'); //追加
   }
 
   @override

@@ -1,9 +1,5 @@
 package com.nkkuma.shogi_movie_flutter.shogi_movie_flutter
 
-
-import androidx.annotation.NonNull
-import io.flutter.embedding.engine.FlutterEngine
-
 import io.flutter.embedding.android.FlutterActivity
 import android.os.Bundle
 import android.content.Context
@@ -13,27 +9,14 @@ import android.content.IntentFilter
 import android.os.BatteryManager
 import android.os.Build.VERSION
 import android.os.Build.VERSION_CODES
-import android.Manifest
-import android.content.pm.PackageManager
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.graphics.Matrix
-import android.media.ExifInterface
 import android.os.Environment
 import android.util.Log
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import org.opencv.android.OpenCVLoader
 import org.opencv.android.Utils
 import org.opencv.core.*
 import org.opencv.imgproc.Imgproc
 import java.io.File
-import java.io.FileOutputStream
-import java.io.IOException
-import java.text.SimpleDateFormat
-import java.util.*
-
-import io.flutter.plugins.GeneratedPluginRegistrant
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity: FlutterActivity() {
@@ -52,6 +35,9 @@ class MainActivity: FlutterActivity() {
     )
     val pieceSizeList = listOf(64, 62, 60, 58, 56, 54, 52, 50, 48, 47, 46, 45, 43, 44, 42, 40, 37, 35)
     val pieceRotateList = listOf(20, 15, 10, 8, 5, 4, 3, 2, 1, 0, -1, -2, -3, -4, -5, -8,  -10, -15, -20)
+
+    val fileController = FileController()
+    val util = Util()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -88,7 +74,7 @@ class MainActivity: FlutterActivity() {
                 Log.d("OpenCV", points)
 
                 // example: perspective covert
-                val pointsFloatList = offsetString2FloatList(points)
+                val pointsFloatList = util.offsetString2FloatList(points)
                 Log.d("OpenCV", pointsFloatList.toString())
                 val convertedpath = toPerspectiveTransformationImg(srcpath = srcPath, dirName = dirName, relativePoints = pointsFloatList)
                 result.success(convertedpath)
@@ -110,111 +96,30 @@ class MainActivity: FlutterActivity() {
         return batteryLevel
     }
 
-    private fun offsetString2FloatList(offsetString: String): List<List<Float>> {
-        val trimmed = offsetString.replace("Offset", "").replace(" ", "")
-        val strlist = trimmed.substring(2, trimmed.length - 2).split("),(")
-        var result = mutableListOf<List<Float>>()
-        strlist.forEach{ offsetString ->
-            val offsetList = offsetString.split(",")
-            result.add(listOf<Float>(offsetList[0].toFloat(), offsetList[1].toFloat()))
-        }
-        return result
-    }
-
-    private fun relativePoints2absolutePoints(relativePoints: List<List<Float>>, imageWidth: Int, imageHeight: Int): List<List<Float>> {
-        var result = mutableListOf<List<Float>>()
-        relativePoints.forEach{ relativePoint ->
-            result.add(listOf<Float>(relativePoint[0]*imageWidth/100.toFloat(), relativePoint[1]*imageHeight/100.toFloat()))
-        }
-        return result
-    }
-
-    // Bitmap を回転
-    private fun rotateImage(source: Bitmap, angle: Float): Bitmap? {
-        val matrix = Matrix()
-        matrix.postRotate(angle)
-        return Bitmap.createBitmap(source, 0, 0, source.width, source.height, matrix, true)
-    }
-
-    // 画像を読み込み、exif に応じて回転
-    private fun readImageFromFileWithRotate(path:String): Bitmap? {
-        try {
-            val ei = ExifInterface(path)
-            val orientation = ei.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_UNDEFINED)
-            val options = BitmapFactory.Options()
-            options.inPreferredConfig = Bitmap.Config.ARGB_8888
-            val bitmap = BitmapFactory.decodeFile(path, options)
-            var rotatedBitmap: Bitmap? = null
-            when (orientation) {
-                ExifInterface.ORIENTATION_ROTATE_90 -> rotatedBitmap = rotateImage(bitmap, 90.0f)
-                ExifInterface.ORIENTATION_ROTATE_180 -> rotatedBitmap = rotateImage(bitmap, 180.0f)
-                ExifInterface.ORIENTATION_ROTATE_270 -> rotatedBitmap = rotateImage(bitmap, 270.0f)
-                ExifInterface.ORIENTATION_NORMAL -> rotatedBitmap = bitmap
-                else -> rotatedBitmap = bitmap
-            }
-            return rotatedBitmap
-        } catch (e: IOException) {
-            e.printStackTrace()
-        }
-        return null
-    }
-
-    // 画像を保存する
-    private fun saveImageToFile(img:Bitmap): String? {
-        try {
-            // 一時ファイルを生成
-            val timeStamp: String = SimpleDateFormat("yyyyMMdd_HHmmss").format(Date())
-            val storageDir: File? = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
-            if (storageDir == null) {
-                return null
-            }
-
-            val file = File.createTempFile(
-                    "JPEG_${timeStamp}_",
-                    ".jpeg",
-                    storageDir)
-            if (file == null) {
-                return null
-            }
-
-            // PNGファイルで保存
-            val out = FileOutputStream(file)
-            img.compress(Bitmap.CompressFormat.JPEG, 100, out)
-            out.flush()
-            out.close()
-
-            return file.absolutePath
-        }
-        catch (e: IOException) {
-            e.printStackTrace()
-            return null
-        }
-    }
-
     // パースペクティブ変換
     private fun toPerspectiveTransformationImg(srcpath: String, dirName: String, relativePoints: List<List<Float>>): String? {
         // Bitmapを読み込み
-        val img = readImageFromFileWithRotate(srcpath)
+        val img = fileController.readImageFromFileWithRotate(srcpath)
         // BitmapをMatに変換する
-        var matSource = Mat()
+        val matSource = Mat()
         Utils.bitmapToMat(img, matSource)
         Log.d("OpenCV", matSource.size().toString())
 
         // 前処理
-        var matDest = Mat()
+        val matDest = Mat()
         // グレースケール変換
         Imgproc.cvtColor(matSource, matDest, Imgproc.COLOR_BGR2GRAY)
         // 2値化
         Imgproc.threshold(matDest, matDest, 0.0, 255.0, Imgproc.THRESH_OTSU)
 
         // convert relativePoints to absolutePoints
-        val absolutePoints = relativePoints2absolutePoints(relativePoints, img!!.getWidth(), img!!.getHeight())
+        val absolutePoints = util.relativePoints2absolutePoints(relativePoints, img!!.getWidth(), img!!.getHeight())
         Log.d("OpenCV", absolutePoints.toString())
 
         // sort points if need
 
         // set points as ptSrc
-        var ptSrc = Mat(4, 2, CvType.CV_32F)
+        val ptSrc = Mat(4, 2, CvType.CV_32F)
         ptSrc.put(0, 0, floatArrayOf(absolutePoints[0][0], absolutePoints[0][1]))
         ptSrc.put(1, 0, floatArrayOf(absolutePoints[1][0], absolutePoints[1][1]))
         ptSrc.put(2, 0, floatArrayOf(absolutePoints[2][0], absolutePoints[2][1]))
@@ -224,14 +129,14 @@ class MainActivity: FlutterActivity() {
         // set target as ptDst
         val width = SPACE_SIZE*9
         val height = SPACE_SIZE*9
-        var ptDst = Mat(4, 2, CvType.CV_32F)
+        val ptDst = Mat(4, 2, CvType.CV_32F)
         ptDst.put(0, 0, floatArrayOf(0.0f, 0.0f))
         ptDst.put(1, 0, floatArrayOf(0.0f, (height - 1).toFloat()))
         ptDst.put(2, 0, floatArrayOf((width - 1).toFloat(), (height - 1).toFloat()))
         ptDst.put(3, 0, floatArrayOf((width - 1).toFloat(), 0.0f))
         Log.d("OpenCV", ptDst.toString())
         // Transformation matrix
-        var matTrans = Imgproc.getPerspectiveTransform(ptSrc, ptDst)
+        val matTrans = Imgproc.getPerspectiveTransform(ptSrc, ptDst)
         // transform and resize image
         val matCropped = Mat(width, height, matSource.type())
         Imgproc.warpPerspective(matSource, matCropped, matTrans, Size(width.toDouble(), height.toDouble()))
@@ -243,11 +148,15 @@ class MainActivity: FlutterActivity() {
         // for koma
         pieceNameListEnglish.forEach { pieceName ->
             // Bitmapを読み込み
-            val komaImg = readImageFromFileWithRotate("${dirName}/${pieceName}.jpg")
+            val komaImg = fileController.readImageFromFileWithRotate("${dirName}/${pieceName}.jpg")
             // BitmapをMatに変換する
-            var matKoma = Mat()
+            val matKoma = Mat()
             Utils.bitmapToMat(komaImg, matKoma)
             // create mask image by fillConvexPoly
+            val rowPointsString = File("${dirName}/${pieceName}.txt").readText()
+            val relativeMatOfPoints = util.offsetString2MatOfPoint(rowPointsString.split("/")[1])
+            val matMask = Mat(100, 100, 0)
+            Imgproc.fillConvexPoly(matMask, relativeMatOfPoints, Scalar(255.0, 255.0, 255.0))
             // for koma-size
             pieceSizeList.forEach { pieceSize ->
                 // resize koma image
@@ -265,10 +174,10 @@ class MainActivity: FlutterActivity() {
 
 
         // Mat を Bitmap に変換して保存
-        var imgResult = Bitmap.createBitmap(width, height, img!!.config)
+        val imgResult = Bitmap.createBitmap(width, height, img!!.config)
         Utils.matToBitmap(matCropped, imgResult)
 
-        return saveImageToFile(imgResult)
+        return fileController.saveImageToFile(imgResult, getExternalFilesDir(Environment.DIRECTORY_PICTURES))
     }
 
 }

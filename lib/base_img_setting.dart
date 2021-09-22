@@ -8,6 +8,7 @@ import 'package:shogi_movie_flutter/record.dart';
 
 import 'file_controller.dart';
 import 'frame_painter.dart';
+import 'util.dart';
 
 class BaseImgSetting extends StatefulWidget {
   final String dirName;
@@ -159,23 +160,15 @@ class _BaseImgSettingState extends State<BaseImgSetting> {
 
   static const platformPieceDetect = MethodChannel('com.nkkuma.dev/piece_detect');
 
-  List<Offset> absolutePoints2relativePoints(List<Offset> points) {
-    // get PainterSize
-    RenderBox? box = globalKeyForPainter.currentContext?.findRenderObject() as RenderBox?;
-    print("ウィジェットのサイズ :${box?.size}");
-    // convert to relative
-    var relativePoints = <Offset>[];
-    points.forEach((Offset point) {
-      relativePoints.add(Offset(100 * point.dx / box!.size.width, 100 * point.dy / box.size.height));
-    });
-    return relativePoints;
+  Size getPainterSize() {
+    return (globalKeyForPainter.currentContext?.findRenderObject() as RenderBox).size;
   }
 
   Future<void> _detectPiecePlace() async {
     // Get battery level.
     String result = "";
     try {
-      List<Offset> relativePoints = absolutePoints2relativePoints(_points);
+      List<Offset> relativePoints = absolutePoints2relativePoints(_points, getPainterSize());
       result = await platformPieceDetect.invokeMethod(
           'piece_detect',
           <String, String>{'srcPath': imageFile!.path, 'points': relativePoints.toString(), 'dirName': widget.dirName}

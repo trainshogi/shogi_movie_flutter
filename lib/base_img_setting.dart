@@ -2,11 +2,13 @@ import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shogi_movie_flutter/record.dart';
 
 import 'file_controller.dart';
 import 'frame_painter.dart';
+import 'util.dart';
 
 class BaseImgSetting extends StatefulWidget {
   final String dirName;
@@ -21,6 +23,7 @@ class _BaseImgSettingState extends State<BaseImgSetting> {
   Image? image;
   Image? transImage;
   int movePointIndex = 0;
+  GlobalKey globalKeyForPainter = GlobalKey();
 
   // タッチした点を覚えておく
   final _points = <Offset>[];
@@ -111,6 +114,7 @@ class _BaseImgSettingState extends State<BaseImgSetting> {
     }
     else {
       return Stack(
+        key: globalKeyForPainter,
         children: [
           image!,
           GestureDetector(
@@ -134,6 +138,60 @@ class _BaseImgSettingState extends State<BaseImgSetting> {
     }
   }
 
+
+  static const platform = MethodChannel('samples.flutter.dev/battery');
+
+  String _batteryLevel = 'Unknown battery level.';
+
+  Future<void> _getBatteryLevel() async {
+    // Get battery level.
+    String batteryLevel;
+    try {
+      final int result = await platform.invokeMethod('getBatteryLevel');
+      batteryLevel = 'Battery level at $result % .';
+    } on PlatformException catch (e) {
+      batteryLevel = "Failed to get battery level: '${e.message}'.";
+    }
+
+    setState(() {
+      _batteryLevel = batteryLevel;
+    });
+  }
+
+  static const platformPieceDetect = MethodChannel('com.nkkuma.dev/piece_detect');
+
+  Size getPainterSize() {
+    return (globalKeyForPainter.currentContext?.findRenderObject() as RenderBox).size;
+  }
+
+  Future<void> _detectPiecePlace() async {
+    // Get battery level.
+    String result = "";
+    try {
+      List<Offset> relativePoints = absolutePoints2relativePoints(_points, getPainterSize());
+      String directoryPath = await FileController.directoryPath(widget.dirName);
+      result = await platformPieceDetect.invokeMethod(
+          'piece_detect',
+          <String, String>{'srcPath': imageFile!.path, 'points': relativePoints.toString(), 'dirName': directoryPath}
+      );
+      // pieceDetect = 'Battery level at $result % .';
+    } on PlatformException catch (e) {
+      print("Failed to get battery level: '${e.message}'.");
+      // pieceDetect = "Failed to get battery level: '${e.message}'.";
+    }
+
+    setState(() {
+      // _pieceDetect = pieceDetect;
+      image = Image.file(File(result));
+    });
+  }
+
+  @override
+  void initState() {
+    _getBatteryLevel();
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -151,6 +209,8 @@ class _BaseImgSettingState extends State<BaseImgSetting> {
                     padding: const EdgeInsets.all(10),
                     child: imageAndPainter(),
                   ),
+                  Text(_batteryLevel),
+                  // Text(_pieceDetect),
                   Container(
                       padding: const EdgeInsets.all(3.0),
                       child: ElevatedButton(
@@ -164,6 +224,7 @@ class _BaseImgSettingState extends State<BaseImgSetting> {
                       child: ElevatedButton(
                         child: const Text('初期駒チェック'),
                         onPressed: () {
+                          _detectPiecePlace();
                         },
                       )),
                   Container(

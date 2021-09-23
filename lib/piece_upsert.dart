@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:shogi_movie_flutter/frame_painter.dart';
 
 import 'file_controller.dart';
+import 'util.dart';
 
 class PieceUpsert extends StatefulWidget {
   final String dirName;
@@ -25,6 +26,7 @@ class _PieceUpsertState extends State<PieceUpsert> {
   int pieceNameIndex = 0;
   String pieceGroupName = ""; // initialize in initState
   String pieceNameJapanese = "歩兵";
+  GlobalKey globalKeyForPainter = GlobalKey();
 
   // static variables
   final pieceNameListJapanese = [
@@ -59,7 +61,8 @@ class _PieceUpsertState extends State<PieceUpsert> {
       // _points file
       if (pointFile.existsSync()) {
         setState(() {
-          _points.addAll(string2Offsets(pointFile.readAsStringSync()));
+          List<Offset> absolutePoints = string2Offsets(pointFile.readAsStringSync().split("/")[0]);
+          _points.addAll(absolutePoints);
         });
       }
     }
@@ -134,6 +137,7 @@ class _PieceUpsertState extends State<PieceUpsert> {
     }
     else {
       return Stack(
+        key: globalKeyForPainter,
         children: [
           image!,
           GestureDetector(
@@ -226,25 +230,16 @@ class _PieceUpsertState extends State<PieceUpsert> {
     }
   }
 
-  Future<void> _saveList() async {
-    String converted = _points.join(":");
-    print(converted);
-    FileController.saveLocalFile(
-        converted, pieceGroupName, pieceNameListEnglish[pieceNameIndex] + '.txt'); //追加
+  Size getPainterSize() {
+    return (globalKeyForPainter.currentContext?.findRenderObject() as RenderBox).size;
   }
 
-  List<Offset> string2Offsets(String row) {
-    var offsets = <Offset>[];
-    List<String> rowOffsets = row.split(':');
-    for (var rowOffset in rowOffsets) {
-      var formatted = rowOffset
-          .replaceAll(" ", "")
-          .replaceFirst("Offset(", "")
-          .replaceFirst(")", "")
-          .split(",");
-      offsets.add(Offset(double.parse(formatted[0]), double.parse(formatted[1])));
-    }
-    return offsets;
+  Future<void> _saveList() async {
+    String absoluteConverted = _points.join(":");
+    String relativeConverted = absolutePoints2relativePoints(_points, getPainterSize()).join(":");
+    print(absoluteConverted + "/" + relativeConverted);
+    FileController.saveLocalFile(absoluteConverted + "/" + relativeConverted,
+        pieceGroupName, pieceNameListEnglish[pieceNameIndex] + '.txt'); //追加
   }
 
   @override

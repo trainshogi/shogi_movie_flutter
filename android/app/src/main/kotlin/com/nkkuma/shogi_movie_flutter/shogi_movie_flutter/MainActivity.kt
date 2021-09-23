@@ -156,15 +156,17 @@ class MainActivity: FlutterActivity() {
             // BitmapをMatに変換する
             val pieceMat = Mat()
             Utils.bitmapToMat(pieceImg, pieceMat)
+            Log.d("OpenCV", pieceMat.size().toString())
             // create mask image by fillConvexPoly
             val rowPointsString = File("${dirName}/${pieceName}.txt").readText()
             val pieceRelativePoints = util.offsetString2MatOfPoint(rowPointsString.split("/")[1])
             val pieceAbstractPoints = util.relativeMatOfPoint2AbsoluteMatOfPoint(pieceRelativePoints, pieceImg!!.width, pieceImg.height)
-            val maskMat = Mat(pieceImg.width, pieceImg.height, 0)
+            val maskMat = Mat(pieceMat.size(), 0)
             Imgproc.fillConvexPoly(maskMat, pieceAbstractPoints, Scalar(255.0, 255.0, 255.0))
             // crop image
             val croppedPieceMat = util.cropImageByMatOfPoint(pieceMat, pieceAbstractPoints)
             val croppedMaskMat = util.cropImageByMatOfPoint(maskMat, pieceAbstractPoints)
+
             // for koma-size
             pieceSizeList.forEach { pieceSize ->
                 // resize koma image
@@ -183,6 +185,7 @@ class MainActivity: FlutterActivity() {
                     Imgproc.matchTemplate(matCropped, rotatedPieceMat, result, Imgproc.TM_CCOEFF_NORMED, rotatedMaskMat)
                     // Core.normalize(result, result, 0.0, 1.0, Core.NORM_MINMAX, -1, Mat())
                     Imgproc.threshold(result, result, 0.65, 1.0, Imgproc.THRESH_TOZERO);
+
                     // add place to foundlist
                     for (i in 0 until result.rows()) {
                         for (j in 0 until result.cols()) {
@@ -204,7 +207,7 @@ class MainActivity: FlutterActivity() {
 
 
         // Mat を Bitmap に変換して保存
-        val imgResult = Bitmap.createBitmap(width, height, img!!.config)
+        val imgResult = Bitmap.createBitmap(matCropped.width(), matCropped.height(), img!!.config)
         Utils.matToBitmap(matCropped, imgResult)
 
         return fileController.saveImageToFile(imgResult, getExternalFilesDir(Environment.DIRECTORY_PICTURES))

@@ -6,13 +6,6 @@ import org.opencv.core.Point
 import org.opencv.core.Rect
 import org.opencv.imgproc.Imgproc
 
-import android.R.attr.y
-
-import android.R.attr.x
-
-
-
-
 class Util {
 
     fun offsetString2FloatList(offsetStrings: String): List<List<Float>> {
@@ -36,7 +29,7 @@ class Util {
 
     fun offsetString2MatOfPoint(offsetStrings: String): MatOfPoint {
         val trimmed = offsetStrings.replace("Offset", "").replace(" ", "")
-        val strlist = trimmed.substring(2, trimmed.length - 2).split("),(")
+        val strlist = trimmed.substring(1, trimmed.length - 2).split("):(")
         val points = mutableListOf<Point>()
         strlist.forEach{ offsetString ->
             val offsetList = offsetString.split(",")
@@ -59,11 +52,12 @@ class Util {
 
     fun cropImageByMatOfPoint(mat: Mat, maskPoints: MatOfPoint): Mat {
         val points = maskPoints.toList()
-        val minX = points.minOf { it.x }
-        val minY = points.minOf { it.y }
-        val maxX = points.maxOf { it.x }
-        val maxY = points.maxOf { it.y }
-        return Mat(mat, Rect(Point(minX, minY), Point(maxX, maxY)))
+        val minX = points.minOf { it.x }.toInt()
+        val minY = points.minOf { it.y }.toInt()
+        val maxX = points.maxOf { it.x }.toInt()
+        val maxY = points.maxOf { it.y }.toInt()
+        print(Rect(minX, minY, maxX-minX, maxY-minY).toString())
+        return Mat(mat, Rect(minX, minY, maxX-minX, maxY-minY))
     }
 
     fun rotateMat(mat: Mat, angle: Double): Mat {

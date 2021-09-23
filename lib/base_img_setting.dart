@@ -169,9 +169,10 @@ class _BaseImgSettingState extends State<BaseImgSetting> {
     String result = "";
     try {
       List<Offset> relativePoints = absolutePoints2relativePoints(_points, getPainterSize());
+      String directoryPath = await FileController.directoryPath(widget.dirName);
       result = await platformPieceDetect.invokeMethod(
           'piece_detect',
-          <String, String>{'srcPath': imageFile!.path, 'points': relativePoints.toString(), 'dirName': widget.dirName}
+          <String, String>{'srcPath': imageFile!.path, 'points': relativePoints.toString(), 'dirName': directoryPath}
       );
       // pieceDetect = 'Battery level at $result % .';
     } on PlatformException catch (e) {

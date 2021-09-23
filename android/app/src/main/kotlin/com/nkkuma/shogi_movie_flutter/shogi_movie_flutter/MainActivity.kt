@@ -18,6 +18,10 @@ import org.opencv.core.*
 import org.opencv.imgproc.Imgproc
 import java.io.File
 import io.flutter.plugin.common.MethodChannel
+import org.opencv.core.Mat
+
+import org.opencv.core.Scalar
+
 
 class MainActivity: FlutterActivity() {
     private val CHANNEL = "samples.flutter.dev/battery"
@@ -148,24 +152,50 @@ class MainActivity: FlutterActivity() {
         // for koma
         pieceNameListEnglish.forEach { pieceName ->
             // Bitmapを読み込み
-            val komaImg = fileController.readImageFromFileWithRotate("${dirName}/${pieceName}.jpg")
+            val pieceImg = fileController.readImageFromFileWithRotate("${dirName}/${pieceName}.jpg")
             // BitmapをMatに変換する
-            val matKoma = Mat()
-            Utils.bitmapToMat(komaImg, matKoma)
+            val pieceMat = Mat()
+            Utils.bitmapToMat(pieceImg, pieceMat)
             // create mask image by fillConvexPoly
             val rowPointsString = File("${dirName}/${pieceName}.txt").readText()
-            val relativeMatOfPoints = util.offsetString2MatOfPoint(rowPointsString.split("/")[1])
-            val matMask = Mat(100, 100, 0)
-            Imgproc.fillConvexPoly(matMask, relativeMatOfPoints, Scalar(255.0, 255.0, 255.0))
+            val pieceRelativePoints = util.offsetString2MatOfPoint(rowPointsString.split("/")[1])
+            val pieceAbstractPoints = util.relativeMatOfPoint2AbsoluteMatOfPoint(pieceRelativePoints, pieceImg!!.width, pieceImg.height)
+            val maskMat = Mat(pieceImg.width, pieceImg.height, 0)
+            Imgproc.fillConvexPoly(maskMat, pieceAbstractPoints, Scalar(255.0, 255.0, 255.0))
+            // crop image
+            val croppedPieceMat = util.cropImageByMatOfPoint(pieceMat, pieceAbstractPoints)
+            val croppedMaskMat = util.cropImageByMatOfPoint(maskMat, pieceAbstractPoints)
             // for koma-size
             pieceSizeList.forEach { pieceSize ->
                 // resize koma image
+                val resizedPieceMat = Mat()
+                val resizedMaskMat = Mat()
+                Imgproc.resize(croppedPieceMat, resizedPieceMat, Size(pieceSize.toDouble(), pieceSize.toDouble()))
+                Imgproc.resize(croppedMaskMat, resizedMaskMat, Size(pieceSize.toDouble(), pieceSize.toDouble()))
                 // for koma-rotate
                 pieceRotateList.forEach { pieceRotate ->
                     // rotate koma image
+                    val rotatedPieceMat = util.rotateMat(resizedPieceMat, pieceRotate.toDouble())
+                    val rotatedMaskMat = util.rotateMat(resizedMaskMat, pieceRotate.toDouble())
                     // threshold to 127
                     // matchTemplate > threshold(0.65)
+                    val result = Mat()
+                    Imgproc.matchTemplate(matCropped, rotatedPieceMat, result, Imgproc.TM_CCOEFF_NORMED, rotatedMaskMat)
+                    // Core.normalize(result, result, 0.0, 1.0, Core.NORM_MINMAX, -1, Mat())
+                    Imgproc.threshold(result, result, 0.65, 1.0, Imgproc.THRESH_TOZERO);
                     // add place to foundlist
+                    for (i in 0 until result.rows()) {
+                        for (j in 0 until result.cols()) {
+                            if (result[i, j][0] > 0) {
+                                Imgproc.rectangle(
+                                    matCropped,
+                                    Point(j.toDouble(), i.toDouble()),
+                                    Point((j + rotatedPieceMat.cols()).toDouble(), (i + rotatedPieceMat.rows()).toDouble()),
+                                    Scalar(0.0, 0.0, 255.0)
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }

@@ -18,6 +18,7 @@ import org.opencv.core.*
 import org.opencv.imgproc.Imgproc
 import java.io.File
 import io.flutter.plugin.common.MethodChannel
+import org.json.JSONObject
 import org.opencv.core.Mat
 
 import org.opencv.core.Scalar
@@ -34,11 +35,14 @@ class MainActivity: FlutterActivity() {
         "と金", "成香", "成桂", "成銀", "竜馬", "龍王"
     )
     val pieceNameListEnglish = listOf(
-        "fu", "kyo", "kei", "gin", "kin", "kaku", "hisya", "ou",
-        "nfu", "nkyo", "nkei", "ngin", "nkaku", "nhisya"
+        "fu"
+//        "fu", "kyo", "kei", "gin", "kin", "kaku", "hisya", "ou",
+//        "nfu", "nkyo", "nkei", "ngin", "nkaku", "nhisya"
     )
-    val pieceSizeList = listOf(64, 62, 60, 58, 56, 54, 52, 50, 48, 47, 46, 45, 43, 44, 42, 40, 37, 35)
-    val pieceRotateList = listOf(20, 15, 10, 8, 5, 4, 3, 2, 1, 0, -1, -2, -3, -4, -5, -8,  -10, -15, -20)
+    val pieceSizeList = listOf(60) //64, 62, 60, 58, 56, 54, 52, 50, 48, 47, 46, 45, 43, 44, 42, 40, 37, 35)
+    val pieceRotateList = listOf(0)//20, 15, 10, 8, 5, 4, 3, 2, 1, 0, -1, -2, -3, -4, -5, -8,  -10, -15, -20)
+
+    private val MATCH_THRESHOLD = 0.80
 
     val fileController = FileController()
     val util = Util()
@@ -80,8 +84,8 @@ class MainActivity: FlutterActivity() {
                 // example: perspective covert
                 val pointsFloatList = util.offsetString2FloatList(points)
                 Log.d("OpenCV", pointsFloatList.toString())
-                val convertedpath = toPerspectiveTransformationImg(srcpath = srcPath, dirName = dirName, relativePoints = pointsFloatList)
-                result.success(convertedpath)
+                val resultJson = toPerspectiveTransformationImg(srcpath = srcPath, dirName = dirName, relativePoints = pointsFloatList)
+                result.success(resultJson)
             } else {
                 result.notImplemented()
             }
@@ -161,7 +165,7 @@ class MainActivity: FlutterActivity() {
             val rowPointsString = File("${dirName}/${pieceName}.txt").readText()
             val pieceRelativePoints = util.offsetString2MatOfPoint(rowPointsString.split("/")[1])
             val pieceAbstractPoints = util.relativeMatOfPoint2AbsoluteMatOfPoint(pieceRelativePoints, pieceImg!!.width, pieceImg.height)
-            val maskMat = Mat(pieceMat.size(), 0)
+            val maskMat = Mat.zeros(pieceMat.size(), CvType.CV_8U)
             Imgproc.fillConvexPoly(maskMat, pieceAbstractPoints, Scalar(255.0, 255.0, 255.0))
             // crop image
             val croppedPieceMat = util.cropImageByMatOfPoint(pieceMat, pieceAbstractPoints)
@@ -183,8 +187,15 @@ class MainActivity: FlutterActivity() {
                     // matchTemplate > threshold(0.65)
                     val result = Mat()
                     Imgproc.matchTemplate(matCropped, rotatedPieceMat, result, Imgproc.TM_CCOEFF_NORMED, rotatedMaskMat)
-                    // Core.normalize(result, result, 0.0, 1.0, Core.NORM_MINMAX, -1, Mat())
-                    Imgproc.threshold(result, result, 0.65, 1.0, Imgproc.THRESH_TOZERO);
+                    Core.normalize(result, result, 0.0, 1.0, Core.NORM_MINMAX, -1, Mat())
+                    Imgproc.threshold(result, result, MATCH_THRESHOLD, 1.0, Imgproc.THRESH_TOZERO);
+
+//                    val tmpResult = Mat()
+//                    result.convertTo(tmpResult, CvType.CV_8U)
+//                    val imgResult = Bitmap.createBitmap(tmpResult.width(), tmpResult.height(), img!!.config)
+//                    Utils.matToBitmap(tmpResult, imgResult)
+//
+//                    return fileController.saveImageToFile(imgResult, getExternalFilesDir(Environment.DIRECTORY_PICTURES))
 
                     // add place to foundlist
                     for (i in 0 until result.rows()) {
@@ -203,14 +214,19 @@ class MainActivity: FlutterActivity() {
             }
         }
 
-        // create json
-
 
         // Mat を Bitmap に変換して保存
         val imgResult = Bitmap.createBitmap(matCropped.width(), matCropped.height(), img!!.config)
         Utils.matToBitmap(matCropped, imgResult)
+        val imgPath = fileController.saveImageToFile(imgResult, getExternalFilesDir(Environment.DIRECTORY_PICTURES))
 
-        return fileController.saveImageToFile(imgResult, getExternalFilesDir(Environment.DIRECTORY_PICTURES))
+        // create json
+        val rootObject = JSONObject()
+        rootObject.put("imgPath", imgPath)
+        rootObject.put("sfen","lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL")
+        Log.d("OpenCV", rootObject.toString())
+
+        return rootObject.toString()
     }
 
 }

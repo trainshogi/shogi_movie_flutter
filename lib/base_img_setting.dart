@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
@@ -182,7 +183,8 @@ class _BaseImgSettingState extends State<BaseImgSetting> {
 
     setState(() {
       // _pieceDetect = pieceDetect;
-      image = Image.file(File(result));
+      String imgPath = jsonDecode(result)['imgPath'];
+      image = Image.file(File(imgPath));
     });
   }
 
@@ -216,7 +218,8 @@ class _BaseImgSettingState extends State<BaseImgSetting> {
                       child: ElevatedButton(
                         child: const Text('カメラで撮影'),
                         onPressed: () {
-                          _getAndSaveImageFromDevice(ImageSource.camera); // New Line
+                          // _getAndSaveImageFromDevice(ImageSource.camera);
+                          _getAndSaveImageFromDevice(ImageSource.gallery);
                         },
                       )),
                   Container(

@@ -275,7 +275,8 @@ class _PieceUpsertState extends State<PieceUpsert> {
                 child: ElevatedButton(
                   child: const Text('カメラで撮影'),
                   onPressed: () {
-                    _getAndSaveImageFromDevice(ImageSource.camera); // New Line
+                    // _getAndSaveImageFromDevice(ImageSource.camera);
+                    _getAndSaveImageFromDevice(ImageSource.gallery);
                   },
                 )
               ),

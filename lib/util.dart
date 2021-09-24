@@ -1,6 +1,8 @@
 
 import 'dart:ui';
 
+import 'package:flutter/material.dart';
+
 List<Offset> absolutePoints2relativePoints(List<Offset> points, Size size) {
   // get PainterSize
   print("ウィジェットのサイズ: $size");
@@ -35,4 +37,42 @@ List<Offset> string2Offsets(String row) {
     offsets.add(Offset(double.parse(formatted[0]), double.parse(formatted[1])));
   }
   return offsets;
+}
+
+void alertDialog(BuildContext context, String alert_sentence) {
+  showDialog(
+    context: context,
+    builder: (_) {
+      return AlertDialog(
+        title: const Text("エラー"),
+        content: Text(alert_sentence),
+        actions: <Widget>[
+          // ボタン領域
+          TextButton(
+            child: const Text("OK"),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ],
+      );
+    },
+  );
+}
+
+void successDialog(BuildContext context, String alert_sentence) {
+  showDialog(
+    context: context,
+    builder: (_) {
+      return AlertDialog(
+        title: const Text("成功"),
+        content: Text(alert_sentence),
+        actions: <Widget>[
+          // ボタン領域
+          TextButton(
+            child: const Text("OK"),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ],
+      );
+    },
+  );
 }

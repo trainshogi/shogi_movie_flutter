@@ -10,6 +10,7 @@ import 'package:shogi_movie_flutter/record.dart';
 import 'file_controller.dart';
 import 'frame_painter.dart';
 import 'util.dart';
+import 'util_sfen.dart';
 
 class BaseImgSetting extends StatefulWidget {
   final String dirName;
@@ -25,6 +26,7 @@ class _BaseImgSettingState extends State<BaseImgSetting> {
   Image? transImage;
   int movePointIndex = 0;
   GlobalKey globalKeyForPainter = GlobalKey();
+  String initial_sfen = "";
 
   // タッチした点を覚えておく
   final _points = <Offset>[];
@@ -60,22 +62,7 @@ class _BaseImgSettingState extends State<BaseImgSetting> {
       });
     }
     else {
-      showDialog(
-        context: context,
-        builder: (_) {
-          return AlertDialog(
-            title: const Text("エラー"),
-            content: const Text("枠の角は4点より多く設定できません"),
-            actions: <Widget>[
-              // ボタン領域
-              TextButton(
-                child: const Text("OK"),
-                onPressed: () => Navigator.pop(context),
-              ),
-            ],
-          );
-        },
-      );
+      alertDialog(context, "枠の角は4点より多く設定できません");
     }
   }
 
@@ -168,24 +155,43 @@ class _BaseImgSettingState extends State<BaseImgSetting> {
   Future<void> _detectPiecePlace() async {
     // Get battery level.
     String result = "";
-    try {
-      List<Offset> relativePoints = absolutePoints2relativePoints(_points, getPainterSize());
-      String directoryPath = await FileController.directoryPath(widget.dirName);
-      result = await platformPieceDetect.invokeMethod(
-          'piece_detect',
-          <String, String>{'srcPath': imageFile!.path, 'points': relativePoints.toString(), 'dirName': directoryPath}
-      );
-      // pieceDetect = 'Battery level at $result % .';
-    } on PlatformException catch (e) {
-      print("Failed to get battery level: '${e.message}'.");
-      // pieceDetect = "Failed to get battery level: '${e.message}'.";
+    if (_points.length != 4) {
+      alertDialog(context, "枠の角を4点設定してください");
     }
+    else {
+      try {
+        List<Offset> relativePoints = absolutePoints2relativePoints(
+            _points, getPainterSize());
+        String directoryPath = await FileController.directoryPath(
+            widget.dirName);
+        result = await platformPieceDetect.invokeMethod(
+            'piece_detect',
+            <String, String>{
+              'srcPath': imageFile!.path,
+              'points': relativePoints.toString(),
+              'dirName': directoryPath
+            }
+        );
+        // pieceDetect = 'Battery level at $result % .';
+      } on PlatformException catch (e) {
+        print("Failed to get battery level: '${e.message}'.");
+        // pieceDetect = "Failed to get battery level: '${e.message}'.";
+      }
 
-    setState(() {
-      // _pieceDetect = pieceDetect;
-      String imgPath = jsonDecode(result)['imgPath'];
-      image = Image.file(File(imgPath));
-    });
+      setState(() {
+        // _pieceDetect = pieceDetect;
+        String imgPath = jsonDecode(result)['imgPath'];
+        initial_sfen = jsonDecode(result)['sfen'];
+        image = Image.file(File(imgPath));
+        // if initial_sfen is not correct, retake koma photo or give up
+        if (!isInitialPosition(initial_sfen)) {
+          alertDialog(context, "初期盤面が正しく読み込まれませんでした。初期盤面を撮り直すか駒を撮り直してください。");
+        }
+        else {
+          successDialog(context, "初期盤面が正しく読み込まれました");
+        }
+      });
+    }
   }
 
   @override

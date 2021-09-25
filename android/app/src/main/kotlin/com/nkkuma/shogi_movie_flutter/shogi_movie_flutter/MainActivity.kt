@@ -39,9 +39,9 @@ class MainActivity: FlutterActivity() {
 //        "fu", "kyo", "kei", "gin", "kin", "kaku", "hisya", "ou",
 //        "nfu", "nkyo", "nkei", "ngin", "nkaku", "nhisya"
     )
-    val pieceSizeList = listOf(64, 62, 60, 58, 56, 54, 52, 50, 48, 47, 46, 45, 43, 44, 42, 40, 37, 35)
+    private val pieceSizeList = listOf(64, 62, 60, 58, 56, 54, 52, 50, 48, 47, 46, 45, 43, 44, 42, 40, 37, 35)
 //    val pieceRotateList = listOf(20, 15, 10, 8, 5, 4, 3, 2, 1, 0, -1, -2, -3, -4, -5, -8,  -10, -15, -20)
-    val pieceRotateList = listOf(20, 15, 10, 5, 0, -5, -10, -15, -20)
+    private val pieceRotateList = listOf(20, 15, 10, 5, 0, -5, -10, -15, -20)
 
     private val MATCH_THRESHOLD = 0.65
 
@@ -85,11 +85,11 @@ class MainActivity: FlutterActivity() {
                 // example: perspective covert
                 val pointsFloatList = util.offsetString2FloatList(points)
                 Log.d("OpenCV", pointsFloatList.toString())
-                val resultJson = toPerspectiveTransformationImg(
+                val resultJson = getCurrentPosition(
                     srcpath = srcPath,
                     dirName = dirName,
                     relativePoints = pointsFloatList,
-                    pieceSizeList = null
+                    piecesSize = null
                 )
                 result.success(resultJson)
             } else {
@@ -110,29 +110,9 @@ class MainActivity: FlutterActivity() {
         return batteryLevel
     }
 
-    // パースペクティブ変換
-    private fun toPerspectiveTransformationImg(
-        srcpath: String,
-        dirName: String,
-        relativePoints: List<List<Float>>,
-        pieceSizeList: List<Int>
-    ): String? {
-        // Bitmapを読み込み
-        val img = fileController.readImageFromFileWithRotate(srcpath)
-        // BitmapをMatに変換する
-        val matSource = Mat()
-        Utils.bitmapToMat(img, matSource)
-        Log.d("OpenCV", matSource.size().toString())
+    // perspective transform
+    private fun crop9x9Img(matSource: Mat, absolutePoints: List<List<Float>>): Mat {
 
-        // 前処理
-        val matDest = Mat()
-        // グレースケール変換
-        Imgproc.cvtColor(matSource, matDest, Imgproc.COLOR_BGR2GRAY)
-        // 2値化
-        Imgproc.threshold(matDest, matDest, 0.0, 255.0, Imgproc.THRESH_OTSU)
-
-        // convert relativePoints to absolutePoints
-        val absolutePoints = util.relativePoints2absolutePoints(relativePoints, img!!.getWidth(), img!!.getHeight())
         Log.d("OpenCV", absolutePoints.toString())
 
         // sort points if need
@@ -159,6 +139,36 @@ class MainActivity: FlutterActivity() {
         // transform and resize image
         val matCropped = Mat(width, height, matSource.type())
         Imgproc.warpPerspective(matSource, matCropped, matTrans, Size(width.toDouble(), height.toDouble()))
+
+        return matCropped
+    }
+
+    // crop image and matchTemplate pieces
+    private fun getCurrentPosition(
+        srcpath: String,
+        dirName: String,
+        relativePoints: List<List<Float>>,
+        piecesSize: List<Int>?
+    ): String? {
+        // Bitmapを読み込み
+        val img = fileController.readImageFromFileWithRotate(srcpath)
+        // BitmapをMatに変換する
+        val matSource = Mat()
+        Utils.bitmapToMat(img, matSource)
+        Log.d("OpenCV", matSource.size().toString())
+
+//        // 前処理
+//        val matDest = Mat()
+//        // グレースケール変換
+//        Imgproc.cvtColor(matSource, matDest, Imgproc.COLOR_BGR2GRAY)
+//        // 2値化
+//        Imgproc.threshold(matDest, matDest, 0.0, 255.0, Imgproc.THRESH_OTSU)
+
+        // convert relativePoints to absolutePoints
+        val absolutePoints = util.relativePoints2absolutePoints(relativePoints, img!!.getWidth(), img!!.getHeight())
+        Log.d("OpenCV", absolutePoints.toString())
+
+        val matCropped = crop9x9Img(matSource, absolutePoints)
 
         // equalizeHist
 //        val matHist = Mat(width, height, matCropped.type())

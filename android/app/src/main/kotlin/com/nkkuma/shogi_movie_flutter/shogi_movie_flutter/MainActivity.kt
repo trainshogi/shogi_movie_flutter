@@ -43,12 +43,18 @@ class MainActivity: FlutterActivity() {
 //        "fu", "kyo", "kei", "gin", "kin", "kaku", "hisya", "ou",
 //        "nfu", "nkyo", "nkei", "ngin", "nkaku", "nhisya"
     )
+    val pieceNameListSfen = listOf(
+//        "p"
+        "P", "L", "N", "S", "G", "B", "R", "K", "p", "l", "n", "s", "g", "b", "r", "k"
+//        "P", "L", "N", "S", "G", "B", "R", "K",
+//        "+P", "+L", "+N", "+S", "+B", "+R"
+    )
     private val pieceSizeList = listOf(64, 62, 60, 58, 56, 54, 52, 50, 48, 47, 46, 45, 44, 43, 42, 41, 40, 37, 35)
 //    private val pieceSizeList = listOf(46, 45, 44, 43, 42, 41, 40, 39, 38, 37, 36, 35)
     private val pieceRotateList = listOf(20, 15, 10, 8, 5, 4, 3, 2, 1, 0, -1, -2, -3, -4, -5, -8,  -10, -15, -20)
 //    private val pieceRotateList = listOf(20, 15, 10, 5, 0, -5, -10, -15, -20)
 
-    private val MATCH_THRESHOLD = 0.55
+    private val MATCH_THRESHOLD = 0.80
 
     val fileController = FileController()
     val util = Util()
@@ -186,6 +192,7 @@ class MainActivity: FlutterActivity() {
         relativePoints: List<List<Float>>,
         piecesSize: List<Int>?
     ): String? {
+//        var sfen = "111111111/111111111/111111111/111111111/111111111/111111111/111111111/111111111/111111111"
         // Bitmapを読み込み
         val img = fileController.readImageFromFileWithRotate(srcpath)
         // BitmapをMatに変換する
@@ -193,12 +200,7 @@ class MainActivity: FlutterActivity() {
         Utils.bitmapToMat(img, matSource)
         Log.d("OpenCV", matSource.size().toString())
 
-//        // 前処理
-//        val matDest = Mat()
-//        // グレースケール変換
-//        Imgproc.cvtColor(matSource, matDest, Imgproc.COLOR_BGR2GRAY)
-//        // 2値化
-//        Imgproc.threshold(matDest, matDest, 0.0, 255.0, Imgproc.THRESH_OTSU)
+//        val matSource = util.binalizeColorMat(matSource)
 
         // convert relativePoints to absolutePoints
         val absolutePoints = util.relativePoints2absolutePoints(relativePoints, img!!.getWidth(), img!!.getHeight())
@@ -230,6 +232,9 @@ class MainActivity: FlutterActivity() {
             // crop image
             var croppedPieceMat = util.cropImageByMatOfPoint(pieceMat, pieceAbstractPoints)
             var croppedMaskMat = util.cropImageByMatOfPoint(maskMat, pieceAbstractPoints)
+//            // binalize
+//            croppedPieceMat = util.binalizeColorMat(croppedPieceMat)
+//            croppedMaskMat = util.binalizeColorMat(croppedMaskMat)
             // if piece name starts v, reverse image
             if (secondHandPiece) {
                 croppedPieceMat = util.rotateMat(croppedPieceMat,180.0)
@@ -253,6 +258,7 @@ class MainActivity: FlutterActivity() {
                     foundSpaces.addAll(matchTemplateWithRotate(pieceRotate, resizedPieceMat, resizedMaskMat, matCropped))
                     // end loop of rotate
                 }
+
                 Log.d("OpenCV", pieceSize.toString() + ", " + foundSpaces.size.toString() + ", " + foundSpaces.toString())
                 // end loop of size
             }

@@ -1,9 +1,6 @@
 package com.nkkuma.shogi_movie_flutter.shogi_movie_flutter
 
-import org.opencv.core.Mat
-import org.opencv.core.MatOfPoint
-import org.opencv.core.Point
-import org.opencv.core.Rect
+import org.opencv.core.*
 import org.opencv.imgproc.Imgproc
 
 class Util {
@@ -67,6 +64,20 @@ class Util {
         val result = Mat()
         val mapMatrix = Imgproc.getRotationMatrix2D(center, angle, scale)
         Imgproc.warpAffine(mat, result, mapMatrix, mat.size())
+        return result
+    }
+
+    fun binalizeColorMat(mat: Mat): Mat {
+        val colorMat = mutableListOf<Mat>()
+        // split to r,g,b
+        Core.split(mat, colorMat)
+        colorMat.forEach {
+            // binalize one by one
+            Imgproc.threshold(it, it, 127.0, 255.0, Imgproc.THRESH_BINARY)
+        }
+        // merge r,g,b to one
+        val result = Mat()
+        Core.merge(colorMat, result)
         return result
     }
 }

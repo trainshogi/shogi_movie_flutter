@@ -5,7 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:shogi_movie_flutter/result.dart';
 
 class Record extends StatefulWidget {
-  const Record({Key? key}) : super(key: key);
+  final String dirName;
+  const Record({Key? key, required this.dirName}) : super(key: key);
 
   @override
   _RecordState createState() => _RecordState();

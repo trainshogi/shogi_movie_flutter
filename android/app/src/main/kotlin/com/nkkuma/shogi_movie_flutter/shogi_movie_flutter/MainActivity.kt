@@ -39,10 +39,11 @@ class MainActivity: FlutterActivity() {
 //        "fu", "kyo", "kei", "gin", "kin", "kaku", "hisya", "ou",
 //        "nfu", "nkyo", "nkei", "ngin", "nkaku", "nhisya"
     )
-    val pieceSizeList = listOf(60) //64, 62, 60, 58, 56, 54, 52, 50, 48, 47, 46, 45, 43, 44, 42, 40, 37, 35)
-    val pieceRotateList = listOf(0)//20, 15, 10, 8, 5, 4, 3, 2, 1, 0, -1, -2, -3, -4, -5, -8,  -10, -15, -20)
+    val pieceSizeList = listOf(64, 62, 60, 58, 56, 54, 52, 50, 48, 47, 46, 45, 43, 44, 42, 40, 37, 35)
+//    val pieceRotateList = listOf(20, 15, 10, 8, 5, 4, 3, 2, 1, 0, -1, -2, -3, -4, -5, -8,  -10, -15, -20)
+    val pieceRotateList = listOf(20, 15, 10, 5, 0, -5, -10, -15, -20)
 
-    private val MATCH_THRESHOLD = 0.80
+    private val MATCH_THRESHOLD = 0.65
 
     val fileController = FileController()
     val util = Util()
@@ -84,7 +85,12 @@ class MainActivity: FlutterActivity() {
                 // example: perspective covert
                 val pointsFloatList = util.offsetString2FloatList(points)
                 Log.d("OpenCV", pointsFloatList.toString())
-                val resultJson = toPerspectiveTransformationImg(srcpath = srcPath, dirName = dirName, relativePoints = pointsFloatList)
+                val resultJson = toPerspectiveTransformationImg(
+                    srcpath = srcPath,
+                    dirName = dirName,
+                    relativePoints = pointsFloatList,
+                    pieceSizeList = null
+                )
                 result.success(resultJson)
             } else {
                 result.notImplemented()
@@ -105,7 +111,12 @@ class MainActivity: FlutterActivity() {
     }
 
     // パースペクティブ変換
-    private fun toPerspectiveTransformationImg(srcpath: String, dirName: String, relativePoints: List<List<Float>>): String? {
+    private fun toPerspectiveTransformationImg(
+        srcpath: String,
+        dirName: String,
+        relativePoints: List<List<Float>>,
+        pieceSizeList: List<Int>
+    ): String? {
         // Bitmapを読み込み
         val img = fileController.readImageFromFileWithRotate(srcpath)
         // BitmapをMatに変換する
@@ -187,7 +198,7 @@ class MainActivity: FlutterActivity() {
                     // matchTemplate > threshold(0.65)
                     val result = Mat()
                     Imgproc.matchTemplate(matCropped, rotatedPieceMat, result, Imgproc.TM_CCOEFF_NORMED, rotatedMaskMat)
-                    Core.normalize(result, result, 0.0, 1.0, Core.NORM_MINMAX, -1, Mat())
+//                    Core.normalize(result, result, 0.0, 1.0, Core.NORM_MINMAX, -1, Mat())
                     Imgproc.threshold(result, result, MATCH_THRESHOLD, 1.0, Imgproc.THRESH_TOZERO);
 
 //                    val tmpResult = Mat()

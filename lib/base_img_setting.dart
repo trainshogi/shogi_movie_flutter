@@ -243,7 +243,7 @@ class _BaseImgSettingState extends State<BaseImgSetting> {
                         onPressed: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (context) => const Record()),
+                            MaterialPageRoute(builder: (context) => Record(dirName: widget.dirName)),
                           );
                         },
                       )),

@@ -68,16 +68,49 @@ class Util {
     }
 
     fun binalizeColorMat(mat: Mat): Mat {
+        val hsvMat = Mat()
         val colorMat = mutableListOf<Mat>()
         // split to r,g,b
-        Core.split(mat, colorMat)
-        colorMat.forEach {
-            // binalize one by one
-            Imgproc.threshold(it, it, 127.0, 255.0, Imgproc.THRESH_BINARY)
-        }
+        Imgproc.cvtColor(mat, hsvMat, Imgproc.COLOR_BGR2HSV_FULL)
+        Core.split(hsvMat, colorMat)
+//        Imgproc.equalizeHist(colorMat[2], colorMat[2])
+        val blur = Mat()
+        Imgproc.GaussianBlur(colorMat[2], blur, Size(3.0, 3.0), 0.0)
+        Imgproc.threshold(blur, colorMat[2], 0.0, 255.0, Imgproc.THRESH_BINARY + Imgproc.THRESH_OTSU)
+//        Imgproc.adaptiveThreshold(colorMat[2], colorMat[2], 255.0, Imgproc.ADAPTIVE_THRESH_GAUSSIAN_C, Imgproc.THRESH_BINARY, 5, 2.0)
+//        Imgproc.threshold(colorMat[2], colorMat[2], 127.0, 255.0, Imgproc.THRESH_BINARY)
+//        colorMat.forEach {
+//            // binalize one by one
+//            Imgproc.threshold(it, it, 127.0, 255.0, Imgproc.THRESH_BINARY)
+//        }
         // merge r,g,b to one
         val result = Mat()
         Core.merge(colorMat, result)
+        Imgproc.cvtColor(result, result, Imgproc.COLOR_HSV2BGR_FULL)
         return result
+    }
+
+    fun replaceChar(baseString: String, index: Int, replaceChar: Char): String {
+        val prefix = baseString.substring(0, index)
+        val suffix = if (baseString.length - 1 == index) "" else baseString.substring(index + 1)
+        return prefix + replaceChar + suffix
+    }
+
+    fun sfenSpaceMerge(sfen: String): String {
+        var spaceNumber = 0
+        val mergedSfen = StringBuilder()
+        for (char in sfen) {
+            if (!char.isDigit()) {
+                if (spaceNumber > 0) {
+                    mergedSfen.append(spaceNumber)
+                    spaceNumber = 0
+                }
+                mergedSfen.append(char)
+            }
+            else {
+                spaceNumber += 1
+            }
+        }
+        return mergedSfen.toString()
     }
 }

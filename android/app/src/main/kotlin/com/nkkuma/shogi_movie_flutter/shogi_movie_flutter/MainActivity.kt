@@ -22,6 +22,7 @@ import org.json.JSONObject
 import org.opencv.core.Mat
 
 import org.opencv.core.Scalar
+import java.lang.StringBuilder
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.coroutineContext
 import kotlin.coroutines.suspendCoroutine
@@ -32,7 +33,9 @@ class MainActivity: FlutterActivity() {
 
     private val CHANNEL_PieceDetect = "com.nkkuma.dev/piece_detect"
 
-    private val SPACE_SIZE = 64
+//    private val SPACE_SIZE = 64
+    private val SPACE_WIDTH = 64
+    private val SPACE_HEIGHT = 70 // = (64 * 34.8 / 31.7).toInt()
     val pieceNameListJapanese = listOf(
         "歩兵", "香車", "桂馬", "銀将", "金将", "角行", "飛車", "王将",
         "と金", "成香", "成桂", "成銀", "竜馬", "龍王"
@@ -51,10 +54,10 @@ class MainActivity: FlutterActivity() {
     )
     private val pieceSizeList = listOf(64, 62, 60, 58, 56, 54, 52, 50, 48, 47, 46, 45, 44, 43, 42, 41, 40, 37, 35)
 //    private val pieceSizeList = listOf(46, 45, 44, 43, 42, 41, 40, 39, 38, 37, 36, 35)
-    private val pieceRotateList = listOf(20, 15, 10, 8, 5, 4, 3, 2, 1, 0, -1, -2, -3, -4, -5, -8,  -10, -15, -20)
+    private val pieceRotateList = listOf(20, 15, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, -1, -2, -3, -4, -5, -6, -7, -8, -9, -10, -15, -20)
 //    private val pieceRotateList = listOf(20, 15, 10, 5, 0, -5, -10, -15, -20)
 
-    private val MATCH_THRESHOLD = 0.80
+    private val MATCH_THRESHOLD = 0.65
 
     val fileController = FileController()
     val util = Util()
@@ -101,7 +104,7 @@ class MainActivity: FlutterActivity() {
                     dirName = dirName,
                     relativePoints = pointsFloatList,
 //                    piecesSize = null
-                    piecesSize = listOf(40, 46, 46, 47, 47, 50, 50, 50, 38, 46, 46, 47, 47, 50, 50, 50)
+                    piecesSize = listOf(37, 42, 43, 47, 47, 48, 50, 50, 37, 42, 43, 47, 47, 48, 50, 50)
                 )
                 result.success(resultJson)
             } else {
@@ -138,8 +141,8 @@ class MainActivity: FlutterActivity() {
         Log.d("OpenCV", ptSrc.toString())
 
         // set target as ptDst
-        val width = SPACE_SIZE*9
-        val height = SPACE_SIZE*9
+        val width = SPACE_WIDTH*9
+        val height = SPACE_HEIGHT*9
         val ptDst = Mat(4, 2, CvType.CV_32F)
         ptDst.put(0, 0, floatArrayOf(0.0f, 0.0f))
         ptDst.put(1, 0, floatArrayOf(0.0f, (height - 1).toFloat()))
@@ -170,8 +173,8 @@ class MainActivity: FlutterActivity() {
             for (j in 0 until result.cols()) {
                 if (result[i, j][0] > 0) {
                     foundSpaces.add(Point(
-                        ((j + rotatedPieceMat.cols()/2)/SPACE_SIZE).toDouble(),
-                        ((i + rotatedPieceMat.rows()/2)/SPACE_SIZE).toDouble()
+                        ((j + rotatedPieceMat.cols()/2)/SPACE_WIDTH).toDouble(),
+                        ((i + rotatedPieceMat.rows()/2)/SPACE_HEIGHT).toDouble()
                     ))
                     Imgproc.rectangle(
                         matCropped,
@@ -192,15 +195,16 @@ class MainActivity: FlutterActivity() {
         relativePoints: List<List<Float>>,
         piecesSize: List<Int>?
     ): String? {
-//        var sfen = "111111111/111111111/111111111/111111111/111111111/111111111/111111111/111111111/111111111"
+        var sfen = "111111111/111111111/111111111/111111111/111111111/111111111/111111111/111111111/111111111"
         // Bitmapを読み込み
         val img = fileController.readImageFromFileWithRotate(srcpath)
         // BitmapをMatに変換する
-        val matSource = Mat()
+        var matSource = Mat()
         Utils.bitmapToMat(img, matSource)
         Log.d("OpenCV", matSource.size().toString())
 
-//        val matSource = util.binalizeColorMat(matSource)
+//        Imgproc.cvtColor(matSource, matSource, Imgproc.COLOR_BGR2GRAY)
+//        matSource = util.binalizeColorMat(matSource)
 
         // convert relativePoints to absolutePoints
         val absolutePoints = util.relativePoints2absolutePoints(relativePoints, img!!.getWidth(), img!!.getHeight())
@@ -209,8 +213,11 @@ class MainActivity: FlutterActivity() {
         val matCropped = crop9x9Img(matSource, absolutePoints)
 
         // equalizeHist
-//        val matHist = Mat(width, height, matCropped.type())
-//        Imgproc.equalizeHist(matCropped, matHist)
+//        Imgproc.equalizeHist(matCropped, matCropped)
+//        Imgproc.adaptiveThreshold(matCropped, matCropped,
+//            255.0, Imgproc.ADAPTIVE_THRESH_GAUSSIAN_C, Imgproc.THRESH_BINARY,11,
+//            10.0
+//        )
 
         // for piece
         for ((index, pieceName) in pieceNameListEnglish.withIndex()) {
@@ -232,7 +239,9 @@ class MainActivity: FlutterActivity() {
             // crop image
             var croppedPieceMat = util.cropImageByMatOfPoint(pieceMat, pieceAbstractPoints)
             var croppedMaskMat = util.cropImageByMatOfPoint(maskMat, pieceAbstractPoints)
-//            // binalize
+            // binalize
+//            Imgproc.cvtColor(croppedPieceMat, croppedPieceMat, Imgproc.COLOR_BGR2GRAY)
+//            Imgproc.cvtColor(croppedMaskMat, croppedMaskMat, Imgproc.COLOR_BGR2GRAY)
 //            croppedPieceMat = util.binalizeColorMat(croppedPieceMat)
 //            croppedMaskMat = util.binalizeColorMat(croppedMaskMat)
             // if piece name starts v, reverse image
@@ -248,8 +257,9 @@ class MainActivity: FlutterActivity() {
                 // resize piece image
                 val resizedPieceMat = Mat()
                 val resizedMaskMat = Mat()
-                Imgproc.resize(croppedPieceMat, resizedPieceMat, Size(pieceSize.toDouble(), pieceSize.toDouble()))
-                Imgproc.resize(croppedMaskMat, resizedMaskMat, Size(pieceSize.toDouble(), pieceSize.toDouble()))
+                val ratio = croppedPieceMat.height().toDouble() / croppedPieceMat.width().toDouble()
+                Imgproc.resize(croppedPieceMat, resizedPieceMat, Size(pieceSize.toDouble(), pieceSize*ratio))
+                Imgproc.resize(croppedMaskMat, resizedMaskMat, Size(pieceSize.toDouble(), pieceSize*ratio))
 
                 // foundSpaces
                 val foundSpaces = mutableSetOf<Point>()
@@ -257,6 +267,11 @@ class MainActivity: FlutterActivity() {
                 pieceRotateList.forEach { pieceRotate ->
                     foundSpaces.addAll(matchTemplateWithRotate(pieceRotate, resizedPieceMat, resizedMaskMat, matCropped))
                     // end loop of rotate
+                }
+
+                // apply to sfen
+                foundSpaces.forEach { point ->
+                    sfen = util.replaceChar(sfen, (point.y*10+point.x).toInt(), pieceNameListSfen[index].toCharArray()[0])
                 }
 
                 Log.d("OpenCV", pieceSize.toString() + ", " + foundSpaces.size.toString() + ", " + foundSpaces.toString())
@@ -274,7 +289,7 @@ class MainActivity: FlutterActivity() {
         // create json
         val rootObject = JSONObject()
         rootObject.put("imgPath", imgPath)
-        rootObject.put("sfen","lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL")
+        rootObject.put("sfen", util.sfenSpaceMerge(sfen))
         Log.d("OpenCV", rootObject.toString())
 
         return rootObject.toString()

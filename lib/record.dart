@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:shogi_movie_flutter/result.dart';
@@ -15,6 +16,7 @@ class Record extends StatefulWidget {
 class _RecordState extends State<Record> {
   File? imageFile;
   Image? image;
+  final AudioCache _player = AudioCache(fixedPlayer: AudioPlayer());
 
   Widget imageOrIcon() {
     if (image == null) {
@@ -23,6 +25,12 @@ class _RecordState extends State<Record> {
     else {
       return image!;
     }
+  }
+
+  @override
+  void initState(){
+    super.initState();
+    _player.load("sounds/initial.mp3");
   }
 
   @override
@@ -45,10 +53,11 @@ class _RecordState extends State<Record> {
                       child: ElevatedButton(
                         child: const Text('投了'),
                         onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const Result()),
-                          );
+                          _player.play("sounds/initial.mp3");
+                          // Navigator.push(
+                          //   context,
+                          //   MaterialPageRoute(builder: (context) => const Result()),
+                          // );
                         },
                       )),
                 ],

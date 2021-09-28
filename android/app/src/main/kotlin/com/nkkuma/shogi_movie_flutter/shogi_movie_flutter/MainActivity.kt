@@ -12,6 +12,7 @@ import android.os.Build.VERSION_CODES
 import android.graphics.Bitmap
 import android.os.Environment
 import android.util.Log
+import androidx.annotation.RequiresApi
 import org.opencv.android.OpenCVLoader
 import org.opencv.android.Utils
 import org.opencv.core.*
@@ -62,6 +63,7 @@ class MainActivity: FlutterActivity() {
     val fileController = FileController()
     val util = Util()
 
+    @RequiresApi(VERSION_CODES.N)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 //        GeneratedPluginRegistrant.registerWith(this)
@@ -189,6 +191,7 @@ class MainActivity: FlutterActivity() {
     }
 
     // crop image and matchTemplate pieces
+    @RequiresApi(VERSION_CODES.N)
     private fun getCurrentPosition(
         srcpath: String,
         dirName: String,
@@ -218,6 +221,11 @@ class MainActivity: FlutterActivity() {
 //            255.0, Imgproc.ADAPTIVE_THRESH_GAUSSIAN_C, Imgproc.THRESH_BINARY,11,
 //            10.0
 //        )
+
+        // canny
+//        Imgproc.cvtColor(matCropped, matCropped, Imgproc.COLOR_BGR2GRAY)
+//        Imgproc.Canny(matCropped, matCropped, 150.0, 200.0)
+//        matCropped.convertTo(matCropped, CvType.CV_8UC1)
 
         // for piece
         for ((index, pieceName) in pieceNameListEnglish.withIndex()) {
@@ -261,12 +269,16 @@ class MainActivity: FlutterActivity() {
                 Imgproc.resize(croppedPieceMat, resizedPieceMat, Size(pieceSize.toDouble(), pieceSize*ratio))
                 Imgproc.resize(croppedMaskMat, resizedMaskMat, Size(pieceSize.toDouble(), pieceSize*ratio))
 
+                // canny
+//                Imgproc.cvtColor(resizedPieceMat, resizedPieceMat, Imgproc.COLOR_BGR2GRAY)
+//                Imgproc.Canny(resizedPieceMat, resizedPieceMat, 150.0, 200.0)
+//                resizedPieceMat.convertTo(resizedPieceMat, CvType.CV_8UC1)
+
                 // foundSpaces
                 val foundSpaces = mutableSetOf<Point>()
                 // for piece rotate
-                pieceRotateList.forEach { pieceRotate ->
+                pieceRotateList.parallelStream().forEach { pieceRotate ->
                     foundSpaces.addAll(matchTemplateWithRotate(pieceRotate, resizedPieceMat, resizedMaskMat, matCropped))
-                    // end loop of rotate
                 }
 
                 // apply to sfen

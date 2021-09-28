@@ -22,7 +22,7 @@ class FramePainter extends CustomPainter{
       canvas.drawPoints(pointMode, _tmpPoints, _rectPaint);
     }
     else if(_points.length == 1) {
-      canvas.drawRect(Rect.fromCenter(center: _points.first, width: 20.0, height: 20.0), _rectPaint);
+      canvas.drawRect(Rect.fromCenter(center: _points.first, width: 10.0, height: 10.0), _rectPaint);
     }
   }
 

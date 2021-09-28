@@ -1,29 +1,67 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:audioplayers/audioplayers.dart';
+import 'package:camera/camera.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:shogi_movie_flutter/result.dart';
+import 'package:shogi_movie_flutter/util_sfen.dart';
+
+import 'file_controller.dart';
 
 class Record extends StatefulWidget {
   final String dirName;
-  const Record({Key? key, required this.dirName}) : super(key: key);
+  final List<Offset> relativePoints;
+  const Record({Key? key, required this.dirName, required this.relativePoints}) : super(key: key);
 
   @override
   _RecordState createState() => _RecordState();
 }
 
 class _RecordState extends State<Record> {
+  String? imageFilePath;
   File? imageFile;
   Image? image;
   final AudioCache _player = AudioCache(fixedPlayer: AudioPlayer());
+  String currentSfen = "";
+  //カメラリスト
+  List<CameraDescription>? _cameras;
+  CameraController? _controller;
+  String directoryPath = "";
+
+  static const platformPieceDetect = MethodChannel('com.nkkuma.dev/piece_detect');
 
   Widget imageOrIcon() {
-    if (image == null) {
+    if (_controller == null) {
       return const Icon(Icons.no_sim);
     }
     else {
-      return image!;
+      return
+        Container(
+          padding: const EdgeInsets.fromLTRB(50.0, 0.0, 50.0, 0.0),
+          child: CameraPreview(_controller!)
+        );
+    }
+  }
+
+  // prepare camera
+  void initCamera() async {
+    _cameras = await availableCameras();
+
+    if (_cameras!.isNotEmpty) {
+      _controller = CameraController(_cameras![0], ResolutionPreset.high);
+      _controller!.initialize().then((_) {
+        if (!mounted) {
+          return;
+        }
+
+        //カメラ接続時にbuildするようsetStateを呼び出し
+        setState(() {});
+      });
     }
   }
 
@@ -31,7 +69,18 @@ class _RecordState extends State<Record> {
   void initState(){
     super.initState();
     _player.load("sounds/initial.mp3");
+    _player.play("sounds/initial.mp3");
+    initCamera();
+    currentSfen = initial_sfen;
   }
+
+  @override
+  void dispose() {
+    // Dispose of the controller when the widget is disposed.
+    _controller!.dispose();
+    super.dispose();
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -48,18 +97,50 @@ class _RecordState extends State<Record> {
                 children: [
                   const Text('１手目：７六歩'),
                   imageOrIcon(),
-                  Container(
-                      padding: const EdgeInsets.all(10.0),
-                      child: ElevatedButton(
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      ElevatedButton(
+                        child: const Text('撮影'),
+                        onPressed: () async {
+                          // set waiting loop
+                          // take picture
+                          imageFilePath = (await _controller!.takePicture()).path;
+                          imageFilePath = (await ImagePicker().pickImage(source: ImageSource.gallery))?.path;
+                          // recognize image
+                          directoryPath = await FileController.directoryPath(widget.dirName);
+                          platformPieceDetect.invokeMethod(
+                              'piece_detect',
+                              <String, String>{
+                                'srcPath': imageFilePath!,
+                                'points': widget.relativePoints.toString(),
+                                'dirName': directoryPath
+                              }
+                          ).then((result) async {
+                            // create diff and sound list
+                            List<String> move = getMovement(
+                                currentSfen, jsonDecode(result)['sfen']);
+                            // play sounds
+                            for (String filename in move) {
+                              _player.load("sounds/$filename.mp3");
+                              _player.play("sounds/$filename.mp3");
+                              await Future.delayed(const Duration(seconds: 1));
+                            }
+                          });
+                        },
+                      ),
+                      ElevatedButton(
                         child: const Text('投了'),
                         onPressed: () {
-                          _player.play("sounds/initial.mp3");
-                          // Navigator.push(
-                          //   context,
-                          //   MaterialPageRoute(builder: (context) => const Result()),
-                          // );
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const Result()),
+                          );
                         },
-                      )),
+                      )
+                    ],
+                  ),
                 ],
               ),
             )

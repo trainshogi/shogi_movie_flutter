@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
@@ -26,10 +27,11 @@ class _BaseImgSettingState extends State<BaseImgSetting> {
   Image? transImage;
   int movePointIndex = 0;
   GlobalKey globalKeyForPainter = GlobalKey();
-  String initial_sfen = "";
+  String currentSfen = "";
 
   // タッチした点を覚えておく
   final _points = <Offset>[];
+  List<Offset>? relativePoints;
 
   void _getAndSaveImageFromDevice(ImageSource source) async {
     // 撮影/選択したFileが返ってくる
@@ -154,43 +156,38 @@ class _BaseImgSettingState extends State<BaseImgSetting> {
 
   Future<void> _detectPiecePlace() async {
     // Get battery level.
-    String result = "";
     if (_points.length != 4) {
       alertDialog(context, "枠の角を4点設定してください");
     }
     else {
-      try {
-        List<Offset> relativePoints = absolutePoints2relativePoints(
-            _points, getPainterSize());
-        String directoryPath = await FileController.directoryPath(
-            widget.dirName);
-        result = await platformPieceDetect.invokeMethod(
-            'piece_detect',
-            <String, String>{
-              'srcPath': imageFile!.path,
-              'points': relativePoints.toString(),
-              'dirName': directoryPath
+      relativePoints = absolutePoints2relativePoints(
+          _points, getPainterSize());
+      String directoryPath = await FileController.directoryPath(
+          widget.dirName);
+      platformPieceDetect.invokeMethod(
+          'piece_detect',
+          <String, String>{
+            'srcPath': imageFile!.path,
+            'points': relativePoints.toString(),
+            'dirName': directoryPath
+          }
+      ).then((result) =>
+          setState(() {
+            // _pieceDetect = pieceDetect;
+            String imgPath = jsonDecode(result)['imgPath'];
+            currentSfen = jsonDecode(result)['sfen'];
+            image = Image.file(File(imgPath));
+            // if currentSfen is not correct, retake koma photo or give up
+            if (!isInitialPosition(currentSfen)) {
+              alertDialog(context, "初期盤面が正しく読み込まれませんでした。初期盤面を撮り直すか駒を撮り直してください。");
             }
-        );
-        // pieceDetect = 'Battery level at $result % .';
-      } on PlatformException catch (e) {
-        print("Failed to get battery level: '${e.message}'.");
-        // pieceDetect = "Failed to get battery level: '${e.message}'.";
-      }
+            else {
+              successDialog(context, "初期盤面が正しく読み込まれました");
+            }
+          })
+      );
 
-      setState(() {
-        // _pieceDetect = pieceDetect;
-        String imgPath = jsonDecode(result)['imgPath'];
-        initial_sfen = jsonDecode(result)['sfen'];
-        image = Image.file(File(imgPath));
-        // if initial_sfen is not correct, retake koma photo or give up
-        if (!isInitialPosition(initial_sfen)) {
-          alertDialog(context, "初期盤面が正しく読み込まれませんでした。初期盤面を撮り直すか駒を撮り直してください。");
-        }
-        else {
-          successDialog(context, "初期盤面が正しく読み込まれました");
-        }
-      });
+
     }
   }
 
@@ -243,7 +240,7 @@ class _BaseImgSettingState extends State<BaseImgSetting> {
                         onPressed: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (context) => Record(dirName: widget.dirName)),
+                            MaterialPageRoute(builder: (context) => Record(dirName: widget.dirName, relativePoints: relativePoints!)),
                           );
                         },
                       )),

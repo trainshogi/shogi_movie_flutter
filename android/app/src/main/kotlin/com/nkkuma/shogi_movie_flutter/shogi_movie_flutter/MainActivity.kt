@@ -38,25 +38,25 @@ class MainActivity: FlutterActivity() {
     private val SPACE_WIDTH = 64
     private val SPACE_HEIGHT = 70 // = (64 * 34.8 / 31.7).toInt()
     val pieceNameListJapanese = listOf(
-        "歩兵", "香車", "桂馬", "銀将", "金将", "角行", "飛車", "王将",
+        "歩兵", "香車", "桂馬", "銀将", "金将", "角行", "飛車", "王将", "玉将"
         "と金", "成香", "成桂", "成銀", "竜馬", "龍王"
     )
     val pieceNameListEnglish = listOf(
 //        "vfu"
-        "fu", "kyo", "kei", "gin", "kin", "kaku", "hisya", "ou", "vfu", "vkyo", "vkei", "vgin", "vkin", "vkaku", "vhisya", "vou"
+        "fu", "kyo", "kei", "gin", "kin", "kaku", "hisya", "ou", "gyoku", "vfu", "vkyo", "vkei", "vgin", "vkin", "vkaku", "vhisya", "vou", "vgyoku"
 //        "fu", "kyo", "kei", "gin", "kin", "kaku", "hisya", "ou",
 //        "nfu", "nkyo", "nkei", "ngin", "nkaku", "nhisya"
     )
     val pieceNameListSfen = listOf(
 //        "p"
-        "P", "L", "N", "S", "G", "B", "R", "K", "p", "l", "n", "s", "g", "b", "r", "k"
+        "P", "L", "N", "S", "G", "B", "R", "K", "K", "p", "l", "n", "s", "g", "b", "r", "k", "k"
 //        "P", "L", "N", "S", "G", "B", "R", "K",
 //        "+P", "+L", "+N", "+S", "+B", "+R"
     )
     private val pieceSizeList = listOf(64, 62, 60, 58, 56, 54, 52, 50, 48, 47, 46, 45, 44, 43, 42, 41, 40, 37, 35)
 //    private val pieceSizeList = listOf(46, 45, 44, 43, 42, 41, 40, 39, 38, 37, 36, 35)
-    private val pieceRotateList = listOf(20, 15, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, -1, -2, -3, -4, -5, -6, -7, -8, -9, -10, -15, -20)
-//    private val pieceRotateList = listOf(20, 15, 10, 5, 0, -5, -10, -15, -20)
+//    private val pieceRotateList = listOf(20, 15, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, -1, -2, -3, -4, -5, -6, -7, -8, -9, -10, -15, -20)
+    private val pieceRotateList = listOf(20, 15, 10, 5, 0, -5, -10, -15, -20)
 
     private val MATCH_THRESHOLD = 0.65
 
@@ -106,7 +106,7 @@ class MainActivity: FlutterActivity() {
                     dirName = dirName,
                     relativePoints = pointsFloatList,
 //                    piecesSize = null
-                    piecesSize = listOf(37, 42, 43, 47, 47, 48, 50, 50, 37, 42, 43, 47, 47, 48, 50, 50)
+                    piecesSize = listOf(37, 42, 43, 47, 47, 48, 50, 50, 50, 37, 42, 43, 47, 47, 48, 50, 50, 50)
                 )
                 result.success(resultJson)
             } else {
@@ -223,12 +223,13 @@ class MainActivity: FlutterActivity() {
 //        )
 
         // canny
-//        Imgproc.cvtColor(matCropped, matCropped, Imgproc.COLOR_BGR2GRAY)
+        Imgproc.cvtColor(matCropped, matCropped, Imgproc.COLOR_BGR2GRAY)
 //        Imgproc.Canny(matCropped, matCropped, 150.0, 200.0)
 //        matCropped.convertTo(matCropped, CvType.CV_8UC1)
 
         // for piece
         for ((index, pieceName) in pieceNameListEnglish.withIndex()) {
+//        pieceNameListEnglish.withIndex().toList().parallelStream().forEach { (index, pieceName) ->
             // if piece name starts v, remove v and set second hand piece flag to true
             val secondHandPiece = pieceName[0] == 'v'
             // Bitmapを読み込み
@@ -248,7 +249,7 @@ class MainActivity: FlutterActivity() {
             var croppedPieceMat = util.cropImageByMatOfPoint(pieceMat, pieceAbstractPoints)
             var croppedMaskMat = util.cropImageByMatOfPoint(maskMat, pieceAbstractPoints)
             // binalize
-//            Imgproc.cvtColor(croppedPieceMat, croppedPieceMat, Imgproc.COLOR_BGR2GRAY)
+            Imgproc.cvtColor(croppedPieceMat, croppedPieceMat, Imgproc.COLOR_BGR2GRAY)
 //            Imgproc.cvtColor(croppedMaskMat, croppedMaskMat, Imgproc.COLOR_BGR2GRAY)
 //            croppedPieceMat = util.binalizeColorMat(croppedPieceMat)
 //            croppedMaskMat = util.binalizeColorMat(croppedMaskMat)

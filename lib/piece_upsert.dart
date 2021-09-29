@@ -30,11 +30,11 @@ class _PieceUpsertState extends State<PieceUpsert> {
 
   // static variables
   final pieceNameListJapanese = [
-    "歩兵", "香車", "桂馬", "銀将", "金将", "角行", "飛車", "王将",
+    "歩兵", "香車", "桂馬", "銀将", "金将", "角行", "飛車", "王将", "玉将",
     "と金", "成香", "成桂", "成銀", "竜馬", "龍王"
   ];
   final pieceNameListEnglish = [
-    "fu", "kyo", "kei", "gin", "kin", "kaku", "hisya", "ou",
+    "fu", "kyo", "kei", "gin", "kin", "kaku", "hisya", "ou", "gyoku",
     "nfu", "nkyo", "nkei", "ngin", "nkaku", "nhisya"
   ];
 

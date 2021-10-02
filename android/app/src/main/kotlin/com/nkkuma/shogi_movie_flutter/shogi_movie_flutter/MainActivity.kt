@@ -38,7 +38,7 @@ class MainActivity: FlutterActivity() {
     private val SPACE_WIDTH = 64
     private val SPACE_HEIGHT = 70 // = (64 * 34.8 / 31.7).toInt()
     val pieceNameListJapanese = listOf(
-        "歩兵", "香車", "桂馬", "銀将", "金将", "角行", "飛車", "王将", "玉将"
+        "歩兵", "香車", "桂馬", "銀将", "金将", "角行", "飛車", "王将", "玉将",
         "と金", "成香", "成桂", "成銀", "竜馬", "龍王"
     )
     val pieceNameListEnglish = listOf(

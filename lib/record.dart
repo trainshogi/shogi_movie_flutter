@@ -32,11 +32,12 @@ class _RecordState extends State<Record> {
   List<CameraDescription>? _cameras;
   CameraController? _controller;
   String directoryPath = "";
+  bool pending = false;
 
   static const platformPieceDetect = MethodChannel('com.nkkuma.dev/piece_detect');
 
   Widget imageOrIcon() {
-    if (_controller == null) {
+    if (_controller == null || pending == true) {
       return const Icon(Icons.no_sim);
     }
     else {
@@ -103,30 +104,40 @@ class _RecordState extends State<Record> {
                     children: [
                       ElevatedButton(
                         child: const Text('撮影'),
-                        onPressed: () async {
+                        onPressed: () {
                           // set waiting loop
                           // take picture
-                          imageFilePath = (await _controller!.takePicture()).path;
-                          imageFilePath = (await ImagePicker().pickImage(source: ImageSource.gallery))?.path;
-                          // recognize image
-                          directoryPath = await FileController.directoryPath(widget.dirName);
-                          platformPieceDetect.invokeMethod(
-                              'piece_detect',
-                              <String, String>{
-                                'srcPath': imageFilePath!,
-                                'points': widget.relativePoints.toString(),
-                                'dirName': directoryPath
-                              }
-                          ).then((result) async {
-                            // create diff and sound list
-                            List<String> move = getMovement(
-                                currentSfen, jsonDecode(result)['sfen']);
-                            // play sounds
-                            for (String filename in move) {
-                              _player.load("sounds/$filename.mp3");
-                              _player.play("sounds/$filename.mp3");
-                              await Future.delayed(const Duration(seconds: 1));
-                            }
+                          setState(() {
+                            pending = true;
+                          });
+                          // imageFilePath = (await _controller!.takePicture()).path;
+                          ImagePicker().pickImage(source: ImageSource.gallery).then((value) {
+                            imageFilePath = value?.path;
+                            // recognize image
+                            FileController.directoryPath(widget.dirName).then((value) {
+                              directoryPath = value;
+                              platformPieceDetect.invokeMethod(
+                                  'piece_detect',
+                                  <String, String>{
+                                    'srcPath': imageFilePath!,
+                                    'points': widget.relativePoints.toString(),
+                                    'dirName': directoryPath
+                                  }
+                              ).then((result) async {
+                                // create diff and sound list
+                                List<String> move = getMovement(
+                                    currentSfen, jsonDecode(result)['sfen']);
+                                // play sounds
+                                for (String filename in move) {
+                                  _player.load("sounds/$filename.mp3");
+                                  _player.play("sounds/$filename.mp3");
+                                  await Future.delayed(const Duration(seconds: 1));
+                                }
+                                setState(() {
+                                  pending = false;
+                                });
+                              });
+                            });
                           });
                         },
                       ),

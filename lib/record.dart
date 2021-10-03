@@ -27,7 +27,10 @@ class _RecordState extends State<Record> {
   File? imageFile;
   Image? image;
   final AudioCache _player = AudioCache(fixedPlayer: AudioPlayer());
+  int currentMoveNumber = 0;
   String currentSfen = "";
+  String currentKif = "";
+  List<String> sfenMoveList = [];
   //カメラリスト
   List<CameraDescription>? _cameras;
   CameraController? _controller;
@@ -44,7 +47,8 @@ class _RecordState extends State<Record> {
       return
         Container(
           padding: const EdgeInsets.fromLTRB(50.0, 0.0, 50.0, 0.0),
-          child: CameraPreview(_controller!)
+          // child: CameraPreview(_controller!)
+          child: const Icon(Icons.no_sim)
         );
     }
   }
@@ -96,7 +100,7 @@ class _RecordState extends State<Record> {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text('１手目：７六歩'),
+                  Text(currentMoveNumber.toString() + '手目：' + currentKif),
                   imageOrIcon(),
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
@@ -125,17 +129,21 @@ class _RecordState extends State<Record> {
                                   }
                               ).then((result) async {
                                 // create diff and sound list
-                                List<String> move = getMovement(
-                                    currentSfen, jsonDecode(result)['sfen']);
+                                List<String> move = getKifMovement(currentSfen, jsonDecode(result)['sfen']);
+
+                                setState(() {
+                                  pending = false;
+                                  currentKif = sfenList2Kif(move);
+                                  sfenMoveList.add(getSfenMovement(currentSfen, jsonDecode(result)['sfen']));
+                                });
+
                                 // play sounds
-                                for (String filename in move) {
+                                List<String> filenames = sfenList2AudioFilename(move);
+                                for (String filename in filenames) {
                                   _player.load("sounds/$filename.mp3");
                                   _player.play("sounds/$filename.mp3");
                                   await Future.delayed(const Duration(seconds: 1));
                                 }
-                                setState(() {
-                                  pending = false;
-                                });
                               });
                             });
                           });

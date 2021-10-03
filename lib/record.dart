@@ -133,6 +133,7 @@ class _RecordState extends State<Record> {
 
                                 setState(() {
                                   pending = false;
+                                  currentMoveNumber += 1;
                                   currentKif = sfenList2Kif(move);
                                   sfenMoveList.add(getSfenMovement(currentSfen, jsonDecode(result)['sfen']));
                                 });
@@ -154,7 +155,11 @@ class _RecordState extends State<Record> {
                         onPressed: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (context) => const Result()),
+                            MaterialPageRoute(builder: (context) => Result(
+                              moveNumber: currentMoveNumber,
+                              winner: (currentMoveNumber%2 == 0) ? "先手の勝ち" : "後手の勝ち",
+                              sfen: sfenMoveList2Sfen(sfenMoveList),
+                            )),
                           );
                         },
                       )

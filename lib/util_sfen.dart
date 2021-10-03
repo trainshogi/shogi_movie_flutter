@@ -148,3 +148,14 @@ List<String> getKifMovement(String prevSfen, String nextSfen) {
   }
   return [];
 }
+
+String sfenMoveList2Sfen(List<String> sfenMoveList) {
+  String header = "position startpos moves ";
+  return header + sfenMoveList.join(" ");
+}
+
+String sfen2KentoLink(String sfen) {
+  String URLHeader = 'https://www.kento-shogi.com/?moves=';
+  String needlessHeader = "position startpos moves ";
+  return URLHeader + sfen.replaceFirst(needlessHeader, "").replaceAll(" ", ".").replaceAll("+", "%2B").replaceAll("*", "%2A");
+}

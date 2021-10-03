@@ -2,9 +2,14 @@ import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:shogi_movie_flutter/util_sfen.dart';
 
 class Result extends StatefulWidget {
-  const Result({Key? key}) : super(key: key);
+  final int moveNumber;
+  final String winner;
+  final String sfen;
+  const Result({Key? key, required this.moveNumber, required this.winner, required this.sfen}) : super(key: key);
 
   @override
   _ResultState createState() => _ResultState();
@@ -36,8 +41,16 @@ class _ResultState extends State<Result> {
             crossAxisAlignment: CrossAxisAlignment.center,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Text('１手目まで　先手勝ち'),
+              Text(widget.moveNumber.toString() + '手目まで　' + widget.winner),
               imageOrIcon(),
+              ElevatedButton(
+                child: const Text('KENTOで検討'),
+                onPressed: () async {
+                  if (await canLaunch(sfen2KentoLink(widget.sfen))) {
+                    await launch(sfen2KentoLink(widget.sfen));
+                  }
+                }
+              ),
               Container(
                 padding: const EdgeInsets.all(10.0),
                 child: ElevatedButton(

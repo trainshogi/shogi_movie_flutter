@@ -165,7 +165,7 @@ class _BaseImgSettingState extends State<BaseImgSetting> {
       String directoryPath = await FileController.directoryPath(
           widget.dirName);
       platformPieceDetect.invokeMethod(
-          'piece_detect',
+          'piece_place_detect',
           <String, String>{
             'srcPath': imageFile!.path,
             'points': relativePoints.toString(),

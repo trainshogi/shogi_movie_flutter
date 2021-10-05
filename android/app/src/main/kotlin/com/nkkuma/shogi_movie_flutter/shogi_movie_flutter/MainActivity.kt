@@ -23,6 +23,7 @@ import org.json.JSONObject
 import org.opencv.core.Mat
 
 import org.opencv.core.Scalar
+import java.lang.Integer.min
 import java.lang.StringBuilder
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.coroutineContext
@@ -101,12 +102,36 @@ class MainActivity: FlutterActivity() {
                 // example: perspective covert
                 val pointsFloatList = util.offsetString2FloatList(points)
                 Log.d("OpenCV", pointsFloatList.toString())
-                val resultJson = getCurrentPosition(
+                val resultJson = getCurrentSfen(
                     srcpath = srcPath,
                     dirName = dirName,
                     relativePoints = pointsFloatList,
 //                    piecesSize = null
                     piecesSize = listOf(37, 42, 43, 47, 47, 48, 50, 50, 50, 37, 42, 43, 47, 47, 48, 50, 50, 50)
+                )
+                result.success(resultJson)
+            } else if (call.method == "piece_place_detect") {
+
+                // load opencv
+                if (!OpenCVLoader.initDebug())
+                    Log.e("OpenCV", "Unable to load OpenCV!")
+                else
+                    Log.d("OpenCV", "OpenCV loaded Successfully!")
+
+                // get variable
+                val srcPath = call.argument<String>("srcPath").toString()
+                val dirName = call.argument<String>("dirName").toString()
+                val points = call.argument<String>("points").toString()
+                Log.d("OpenCV", srcPath)
+                Log.d("OpenCV", dirName)
+                Log.d("OpenCV", points)
+
+                // example: perspective covert
+                val pointsFloatList = util.offsetString2FloatList(points)
+                Log.d("OpenCV", pointsFloatList.toString())
+                val resultJson = getCurrentPosition(
+                    srcpath = srcPath,
+                    relativePoints = pointsFloatList
                 )
                 result.success(resultJson)
             } else {
@@ -192,7 +217,7 @@ class MainActivity: FlutterActivity() {
 
     // crop image and matchTemplate pieces
     @RequiresApi(VERSION_CODES.N)
-    private fun getCurrentPosition(
+    private fun getCurrentSfen(
         srcpath: String,
         dirName: String,
         relativePoints: List<List<Float>>,
@@ -308,4 +333,85 @@ class MainActivity: FlutterActivity() {
         return rootObject.toString()
     }
 
+    private fun pieceDetectCircleMat(): Mat {
+        val circleMat = Mat.zeros(Size(SPACE_WIDTH*9.0, SPACE_HEIGHT*9.0), CvType.CV_8UC1)
+        for (i in 0..8) {
+            for (j in 0..8) {
+                Imgproc.circle(
+                    circleMat,
+                    Point((SPACE_WIDTH*i+SPACE_WIDTH/2).toDouble(), (SPACE_HEIGHT*j+SPACE_HEIGHT/2).toDouble()),
+                    kotlin.math.min(SPACE_WIDTH, SPACE_HEIGHT)/3,
+                    Scalar(255.0),
+                    -1
+                )
+            }
+        }
+        return circleMat
+    }
+
+
+    // crop image and matchTemplate pieces
+    @RequiresApi(VERSION_CODES.N)
+    private fun getCurrentPosition(
+        srcpath: String,
+        relativePoints: List<List<Float>>
+    ): String? {
+        // static variable for get piece position
+        val pieceExistThreshold = SPACE_HEIGHT * SPACE_WIDTH * 0.01
+        var sfen = "111111111/111111111/111111111/111111111/111111111/111111111/111111111/111111111/111111111"
+        // Bitmapを読み込み
+        val img = fileController.readImageFromFileWithRotate(srcpath)
+        // BitmapをMatに変換する
+        var matSource = Mat()
+        Utils.bitmapToMat(img, matSource)
+        Log.d("OpenCV", matSource.size().toString())
+
+        // convert relativePoints to absolutePoints
+        val absolutePoints = util.relativePoints2absolutePoints(relativePoints, img!!.getWidth(), img!!.getHeight())
+        Log.d("OpenCV", absolutePoints.toString())
+
+        // crop image
+        val matCropped = crop9x9Img(matSource, absolutePoints)
+
+        // color to grayscale
+        Imgproc.cvtColor(matCropped, matCropped, Imgproc.COLOR_BGR2GRAY)
+        // grayscale to edge
+        Imgproc.Canny(matCropped, matCropped, 150.0, 200.0)
+        matCropped.convertTo(matCropped, CvType.CV_8UC1)
+        // edge to threshold
+        Imgproc.threshold(matCropped, matCropped, 127.0, 255.0, Imgproc.THRESH_BINARY)
+
+        // target circle image
+        val targetCircleMat = pieceDetectCircleMat()
+        // for space if
+        val whiteCountArray = Array(9) { IntArray(9) }
+        for (i in 0 until SPACE_HEIGHT*9) {
+            for (j in 0 until SPACE_WIDTH*9) {
+                if ((targetCircleMat.get(i, j)[0] > 0) && (matCropped.get(i, j)[0] > 0)) {
+                    whiteCountArray[i/SPACE_HEIGHT][j/SPACE_WIDTH] += 1
+                }
+            }
+        }
+        // if white place number > threshold, exists
+        for (i in 0..8) {
+            for (j in 0..8) {
+                if (whiteCountArray[i][j] > pieceExistThreshold) {
+                    sfen = util.replaceChar(sfen, i*10+j, 'Z')
+                }
+            }
+        }
+
+        // Mat を Bitmap に変換して保存
+        val imgResult = Bitmap.createBitmap(matCropped.width(), matCropped.height(), img!!.config)
+        Utils.matToBitmap(matCropped, imgResult)
+        val imgPath = fileController.saveImageToFile(imgResult, getExternalFilesDir(Environment.DIRECTORY_PICTURES))
+
+        // create json
+        val rootObject = JSONObject()
+        rootObject.put("imgPath", imgPath)
+        rootObject.put("sfen", sfen)
+        Log.d("OpenCV", rootObject.toString())
+
+        return rootObject.toString()
+    }
 }

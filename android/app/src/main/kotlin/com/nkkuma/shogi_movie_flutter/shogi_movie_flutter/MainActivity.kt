@@ -23,11 +23,6 @@ import org.json.JSONObject
 import org.opencv.core.Mat
 
 import org.opencv.core.Scalar
-import java.lang.Integer.min
-import java.lang.StringBuilder
-import kotlin.coroutines.CoroutineContext
-import kotlin.coroutines.coroutineContext
-import kotlin.coroutines.suspendCoroutine
 import kotlin.streams.toList
 
 
@@ -200,24 +195,37 @@ class MainActivity: FlutterActivity() {
 
 
                 val relativePoints = util.offsetString2FloatList(points)
-                val positionJson = getCurrentPosition(
+                val positionJson = JSONObject(getCurrentPosition(
                     srcpath = srcPath,
                     relativePoints = relativePoints
-                )
+                ))
 
-                // TODO: parse json and detect Pieces and create Json
-//                // example: perspective covert
-//                val spaceList = space.split(',').map { it.toInt() }
-//                Log.d("OpenCV", relativePoints.toString())
-//                val targetPlaceMat = spaceCroppedMat(srcPath, relativePoints, spaceList)
-//                val resultJson = detectPiece(
-//                    dirName = dirName,
-//                    pieceNameList = listOf(),
-//                    piecesSize = listOf(),
-//                    targetPlaceMat = targetPlaceMat
-////                    piecesSize = listOf(37, 42, 43, 47, 47, 48, 50, 50, 50, 37, 42, 43, 47, 47, 48, 50, 50, 50)
-//                )
-                result.success(positionJson)
+                var sfen = "111111111/111111111/111111111/111111111/111111111/111111111/111111111/111111111/111111111"
+                val placeSfen: String = positionJson.get("sfen") as String
+                val matCropped = file2crop9x9Mat(srcPath, relativePoints)
+                placeSfen.toCharArray().forEachIndexed{ index, char ->
+                    if (char == 'Z') {
+                        val targetPlaceMat = spaceCroppedMat(matCropped, listOf(index%10, index/10))
+                        val detectJsonObject = JSONObject(detectPiece(dirName, listOf(), listOf(), targetPlaceMat))
+                        val pieceNameIndex = pieceNameListEnglish.indexOf(detectJsonObject.getString("piece"))
+                        if (pieceNameIndex != -1) {
+                            sfen = util.replaceChar(sfen, index, pieceNameListSfen[pieceNameIndex].toCharArray()[0])
+                        }
+                    }
+                }
+
+                // Mat を Bitmap に変換して保存
+                val img = fileController.readImageFromFileWithRotate(srcPath)
+                val imgResult = Bitmap.createBitmap(matCropped.width(), matCropped.height(), img!!.config)
+                Utils.matToBitmap(matCropped, imgResult)
+                val imgPath = fileController.saveImageToFile(imgResult, getExternalFilesDir(Environment.DIRECTORY_PICTURES))
+
+                // create json
+                val rootObject = JSONObject()
+                rootObject.put("imgPath", imgPath)
+                rootObject.put("sfen", util.sfenSpaceMerge(sfen))
+                Log.d("OpenCV", rootObject.toString())
+                result.success(rootObject.toString())
             } else {
                 result.notImplemented()
             }
@@ -324,12 +332,7 @@ class MainActivity: FlutterActivity() {
 
     // crop image and matchTemplate pieces
     @RequiresApi(VERSION_CODES.N)
-    private fun getCurrentSfen(
-        srcpath: String,
-        dirName: String,
-        relativePoints: List<List<Float>>,
-        piecesSize: List<Int>?
-    ): String? {
+    private fun getCurrentSfen(srcpath: String, dirName: String, relativePoints: List<List<Float>>, piecesSize: List<Int>?): String? {
         var sfen = "111111111/111111111/111111111/111111111/111111111/111111111/111111111/111111111/111111111"
         // Bitmapを読み込み
         val img = fileController.readImageFromFileWithRotate(srcpath)
@@ -433,10 +436,7 @@ class MainActivity: FlutterActivity() {
 
     // crop image and matchTemplate pieces
 //    @RequiresApi(VERSION_CODES.N)
-    private fun getCurrentPosition(
-        srcpath: String,
-        relativePoints: List<List<Float>>
-    ): String {
+    private fun getCurrentPosition(srcpath: String, relativePoints: List<List<Float>>): String {
         // static variable for get piece position
         val pieceExistThreshold = SPACE_HEIGHT * SPACE_WIDTH * 0.01
         var sfen = "111111111/111111111/111111111/111111111/111111111/111111111/111111111/111111111/111111111"
@@ -497,20 +497,23 @@ class MainActivity: FlutterActivity() {
     }
 
     private fun spaceCroppedMat(srcpath: String, relativePoints: List<List<Float>>, spaceList: List<Int>): Mat {
-        val matCropped = file2crop9x9Mat(srcpath, relativePoints)
+        return spaceCroppedMat(file2crop9x9Mat(srcpath, relativePoints), spaceList)
+    }
+
+    private fun spaceCroppedMat(matCropped: Mat, spaceList: List<Int>): Mat {
         // crop target place
-        val roi = Rect(SPACE_WIDTH*spaceList[0], SPACE_HEIGHT*spaceList[1], SPACE_WIDTH, SPACE_HEIGHT)
+        val minX = if (SPACE_WIDTH*spaceList[0] - SPACE_WIDTH/4 > 0) SPACE_WIDTH*spaceList[0] - SPACE_WIDTH/4 else 0
+        val minY = if (SPACE_HEIGHT*spaceList[1] - SPACE_HEIGHT/4 > 0) SPACE_HEIGHT*spaceList[1] - SPACE_HEIGHT/4 else 0
+        val maxX = if (SPACE_WIDTH*(spaceList[0]+1) + SPACE_WIDTH/4 < matCropped.size().width) SPACE_WIDTH*(spaceList[0]+1) + SPACE_WIDTH/4 else matCropped.size().width
+        val maxY = if (SPACE_HEIGHT*(spaceList[1]+1) + SPACE_HEIGHT/4 < matCropped.size().height) SPACE_HEIGHT*(spaceList[1]+1) + SPACE_HEIGHT/4 else matCropped.size().height
+
+        val roi = Rect(Point(minX.toDouble(), minY.toDouble()), Point(maxX.toDouble(), maxY.toDouble()))
         return Mat(matCropped, roi)
     }
 
     // crop image and matchTemplate pieces
     @RequiresApi(VERSION_CODES.N)
-    private fun detectPiece(
-        dirName: String,
-        pieceNameList: List<String>,
-        piecesSize: List<Int>,
-        targetPlaceMat: Mat
-    ): String {
+    private fun detectPiece(dirName: String, pieceNameList: List<String>, piecesSize: List<Int>, targetPlaceMat: Mat): String {
         // for piece
         val pieceNameListForPiece = if (pieceNameList.isNotEmpty()) pieceNameList else pieceNameListEnglish
 //        for ((index, pieceName) in pieceNameListEnglish.withIndex()) {
@@ -523,26 +526,34 @@ class MainActivity: FlutterActivity() {
             // for piece size
             val pieceSizeListForPiece = if (piecesSize.isNotEmpty()) listOf(piecesSize[index]) else pieceSizeList
 
-            pieceSizeListForPiece.parallelStream().map { pieceSize ->
-                // resize piece image
-                val resizedPieceMat = Mat()
-                val resizedMaskMat = Mat()
-                Imgproc.resize(croppedPieceMat, resizedPieceMat, Size(pieceSize.toDouble(), pieceSize*ratio))
-                Imgproc.resize(croppedMaskMat, resizedMaskMat, Size(pieceSize.toDouble(), pieceSize*ratio))
+            pieceSizeListForPiece.stream().map { pieceSize ->
+                // if targetSize < resizedSize, return 0.0
+                if (targetPlaceMat.size().width <= pieceSize || targetPlaceMat.size().height <= pieceSize*ratio) {
+                    0.0
+                }
+                else {
+                    // resize piece image
+                    val resizedPieceMat = Mat()
+                    val resizedMaskMat = Mat()
+                    Imgproc.resize(croppedPieceMat, resizedPieceMat, Size(pieceSize.toDouble(), pieceSize*ratio))
+                    Imgproc.resize(croppedMaskMat, resizedMaskMat, Size(pieceSize.toDouble(), pieceSize*ratio))
 
-                // for piece rotate
-                pieceRotateList.parallelStream().map { pieceRotate ->
-                    Core.minMaxLoc(matchTemplateWithRotate(pieceRotate, resizedPieceMat, resizedMaskMat, targetPlaceMat)).maxVal
-                }.toList().maxOrNull() ?: 0.0
+                    // for piece rotate
+                    pieceRotateList.parallelStream().map { pieceRotate ->
+                        Core.minMaxLoc(matchTemplateWithRotate(pieceRotate, resizedPieceMat, resizedMaskMat, targetPlaceMat)).maxVal
+                    }.toList().maxOrNull() ?: 0.0
+                }
             }.toList().maxOrNull() ?: 0.0
             // end loop of piece
         }.withIndex().toList().maxByOrNull { it.value }
 
         val pieceName = if (result != null) pieceNameListEnglish[result.index] else ""
+        val pieceValue = result?.value ?: 0
 
         // create json
         val rootObject = JSONObject()
         rootObject.put("piece", pieceName)
+        rootObject.put("value", pieceValue)
         Log.d("OpenCV", rootObject.toString())
 
         return rootObject.toString()

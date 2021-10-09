@@ -122,13 +122,6 @@ class MainActivity: FlutterActivity() {
                 result.success(resultJson)
             }
             else if (call.method == "piece_place_detect") {
-
-                // load opencv
-                if (!OpenCVLoader.initDebug())
-                    Log.e("OpenCV", "Unable to load OpenCV!")
-                else
-                    Log.d("OpenCV", "OpenCV loaded Successfully!")
-
                 // get variable
                 val srcPath = call.argument<String>("srcPath").toString()
                 val dirName = call.argument<String>("dirName").toString()
@@ -137,23 +130,14 @@ class MainActivity: FlutterActivity() {
                 Log.d("OpenCV", dirName)
                 Log.d("OpenCV", points)
 
-                // example: perspective covert
-                val pointsFloatList = util.offsetString2FloatList(points)
-                Log.d("OpenCV", pointsFloatList.toString())
-                val resultJson = getCurrentPosition(
-                    srcpath = srcPath,
-                    relativePoints = pointsFloatList
-                )
-                result.success(resultJson)
+                thread {
+                    val rootObjectString = piece_place_detect(srcPath, dirName, points)
+                    runOnUiThread {
+                        result.success(rootObjectString)
+                    }
+                }
             }
             else if (call.method == "one_piece_detect") {
-
-                // load opencv
-                if (!OpenCVLoader.initDebug())
-                    Log.e("OpenCV", "Unable to load OpenCV!")
-                else
-                    Log.d("OpenCV", "OpenCV loaded Successfully!")
-
                 // get variable
                 val srcPath = call.argument<String>("srcPath").toString()
                 val dirName = call.argument<String>("dirName").toString()
@@ -164,22 +148,14 @@ class MainActivity: FlutterActivity() {
                 Log.d("OpenCV", points)
                 Log.d("OpenCV", space)
 
-                // example: perspective covert
-                val relativePoints = util.offsetString2FloatList(points)
-                val spaceList = space.split(',').map { it.toInt() }
-                Log.d("OpenCV", relativePoints.toString())
-                val targetPlaceMat = spaceCroppedMat(srcPath, relativePoints, spaceList)
-                val resultJson = detectPiece(
-                    dirName = dirName,
-                    pieceNameList = listOf(),
-                    piecesSize = listOf(),
-                    targetPlaceMat = targetPlaceMat
-//                    piecesSize = listOf(37, 42, 43, 47, 47, 48, 50, 50, 50, 37, 42, 43, 47, 47, 48, 50, 50, 50)
-                )
-                result.success(resultJson)
+                thread {
+                    val rootObjectString = one_piece_detect(srcPath, dirName, points, space)
+                    runOnUiThread {
+                        result.success(rootObjectString)
+                    }
+                }
             }
             else if (call.method == "initial_piece_detect") {
-
                 // get variable
                 val srcPath = call.argument<String>("srcPath").toString()
                 val dirName = call.argument<String>("dirName").toString()
@@ -210,6 +186,46 @@ class MainActivity: FlutterActivity() {
             batteryLevel = intent!!.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) * 100 / intent.getIntExtra(BatteryManager.EXTRA_SCALE, -1)
         }
         return batteryLevel
+    }
+
+    private fun piece_place_detect(srcPath: String, dirName: String, points: String): String {
+        // load opencv
+        if (!OpenCVLoader.initDebug())
+            Log.e("OpenCV", "Unable to load OpenCV!")
+        else
+            Log.d("OpenCV", "OpenCV loaded Successfully!")
+
+        // example: perspective covert
+        val pointsFloatList = util.offsetString2FloatList(points)
+        Log.d("OpenCV", pointsFloatList.toString())
+        val resultJson = getCurrentPosition(
+            srcpath = srcPath,
+            relativePoints = pointsFloatList
+        )
+        return resultJson.toString()
+    }
+
+    @RequiresApi(VERSION_CODES.N)
+    private fun one_piece_detect(srcPath: String, dirName: String, points: String, space: String): String {
+        // load opencv
+        if (!OpenCVLoader.initDebug())
+            Log.e("OpenCV", "Unable to load OpenCV!")
+        else
+            Log.d("OpenCV", "OpenCV loaded Successfully!")
+
+        // example: perspective covert
+        val relativePoints = util.offsetString2FloatList(points)
+        val spaceList = space.split(',').map { it.toInt() }
+        Log.d("OpenCV", relativePoints.toString())
+        val targetPlaceMat = spaceCroppedMat(srcPath, relativePoints, spaceList)
+        val resultJson = detectPiece(
+            dirName = dirName,
+            pieceNameList = listOf(),
+            piecesSize = listOf(),
+            targetPlaceMat = targetPlaceMat
+//                    piecesSize = listOf(37, 42, 43, 47, 47, 48, 50, 50, 50, 37, 42, 43, 47, 47, 48, 50, 50, 50)
+        )
+        return resultJson.toString()
     }
 
     @RequiresApi(VERSION_CODES.N)

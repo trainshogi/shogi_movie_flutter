@@ -77,6 +77,22 @@ String sfenList2Kif(List<String> sfenList) {
   return result;
 }
 
+Map<String, int> getMovement(String prevPiecePlace, String nextPiecePlace) {
+  var prevSpace = -1;
+  var nextSpace = -1;
+  for (int i = 0; i < prevPiecePlace.length; i++) {
+    if (prevPiecePlace[i] != nextPiecePlace[i]) {
+      if (nextPiecePlace[i] == "1") {
+        prevSpace = i;
+      }
+      else {
+        nextSpace = i;
+      }
+    }
+  }
+  return {"prevSpace": prevSpace, "nextSpace": nextSpace};
+}
+
 String getSfenMovement(String prevSfen, String nextSfen) {
   var sfenMove = "";
   var prevSfenPurged = sfenSpacePurge(prevSfen);
@@ -158,4 +174,56 @@ String sfen2KentoLink(String sfen) {
   String URLHeader = 'https://www.kento-shogi.com/?moves=';
   String needlessHeader = "position startpos moves ";
   return URLHeader + sfen.replaceFirst(needlessHeader, "").replaceAll(" ", ".").replaceAll("+", "%2B").replaceAll("*", "%2A");
+}
+
+String intSpace2KifString(int space) {
+  return (9 - space%10).toString() + (space~/10 + 1).toString();
+}
+
+String intSpace2SfenString(int space) {
+  return (9 - space%10).toString() + String.fromCharCode(space~/10 + 1 + 96);
+}
+
+String createKif(int prevSpace, int nextSpace, String pieceNameEnglish, String prevSfen) {
+  String place = intSpace2KifString(nextSpace);
+  String piece = pieceNameListJapanese[pieceNameListEnglish.indexOf(pieceNameEnglish)];
+  return place + piece;
+  // if (prevPiece.isEmpty) {
+  //   // put piece
+  //   return baseKif + "打";
+  // }
+  // else if (prevPiece[0] == " " && nextPiece[0] == "+") {
+  //   // promote piece
+  // }
+  // else {
+  //   // move piece
+  //   return ;
+  // }
+  // return [];
+}
+
+String createSfenMove(int prevSpace, int nextSpace, String pieceNameEnglish, String prevSfen) {
+  String prevSpaceSfen = intSpace2SfenString(prevSpace);
+  String nextSpaceSfen = intSpace2SfenString(nextSpace);
+  return prevSpaceSfen + nextSpaceSfen;
+  // if (prevPiece.isEmpty) {
+  //   // put piece
+  //   return baseKif + "打";
+  // }
+  // else if (prevPiece[0] == " " && nextPiece[0] == "+") {
+  //   // promote piece
+  // }
+  // else {
+  //   // move piece
+  //   return ;
+  // }
+  // return [];
+}
+
+String createSfenPhase() {
+  return "";
+}
+
+List<String> createAudioFilenameList() {
+  return [""];
 }

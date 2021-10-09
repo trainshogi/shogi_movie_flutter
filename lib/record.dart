@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shogi_movie_flutter/result.dart';
+import 'package:shogi_movie_flutter/util.dart';
 import 'package:shogi_movie_flutter/util_sfen.dart';
 
 import 'file_controller.dart';
@@ -119,45 +120,49 @@ class _RecordState extends State<Record> {
                           ImagePicker().pickImage(source: ImageSource.gallery).then((value) {
                             imageFilePath = value?.path;
                             // recognize image
-                            FileController.directoryPath(widget.dirName).then((value) {
+                            FileController.directoryPath(widget.dirName).then((value) async {
                               directoryPath = value;
                               // get piece place
-                              platformPieceDetect.invokeMethod(
-                                  'piece_place_detect',
-                                  <String, String>{
-                                    'srcPath': imageFilePath!,
-                                    'points': widget.relativePoints.toString(),
-                                    'dirName': directoryPath
-                                  }
-                              );
-                              // detect movement
-                              // detect piece
-                              platformPieceDetect.invokeMethod(
-                                  'piece_detect',
-                                  <String, String>{
-                                    'srcPath': imageFilePath!,
-                                    'points': widget.relativePoints.toString(),
-                                    'dirName': directoryPath
-                                  }
-                              ).then((result) async {
-                                // create diff and sound list
-                                List<String> move = getKifMovement(currentSfen, jsonDecode(result)['sfen']);
-
-                                setState(() {
-                                  pending = false;
-                                  currentMoveNumber += 1;
-                                  currentKif = sfenList2Kif(move);
-                                  sfenMoveList.add(getSfenMovement(currentSfen, jsonDecode(result)['sfen']));
-                                });
-
-                                // play sounds
-                                List<String> filenames = sfenList2AudioFilename(move);
-                                for (String filename in filenames) {
-                                  _player.load("sounds/$filename.mp3");
-                                  _player.play("sounds/$filename.mp3");
-                                  await Future.delayed(const Duration(seconds: 1));
+                              Map<String, dynamic> placeRequestMap = {
+                                "platform": platformPieceDetect,
+                                "methodName": "piece_place_detect",
+                                "args": {
+                                  'srcPath': imageFilePath!,
+                                  'points': widget.relativePoints.toString(),
+                                  'dirName': directoryPath
                                 }
+                              };
+                              var detectPlaceJson = jsonDecode(await callInvokeMethod(placeRequestMap) as String);
+                              // detect movement
+                              var moveMap = getMovement(currentPiecePlace, detectPlaceJson["sfen"]);
+                              // detect piece
+                              Map<String, dynamic> pieceRequestMap = {
+                                "platform": platformPieceDetect,
+                                "methodName": "one_piece_detect",
+                                "args": {
+                                  'srcPath': imageFilePath!,
+                                  'dirName': directoryPath,
+                                  'points': widget.relativePoints.toString(),
+                                  'space': (moveMap["prevSpace"]!/10).toString() + "," + (moveMap["prevSpace"]!%10).toString()
+                                }
+                              };
+                              var detectPieceJson = jsonDecode(await callInvokeMethod(pieceRequestMap) as String);
+
+                              setState(() {
+                                pending = false;
+                                currentMoveNumber += 1;
+                                currentKif = createKif(moveMap["prevSpace"]!, moveMap["nextSpace"]!, detectPieceJson["piece"], currentSfen);
+                                sfenMoveList.add(createSfenMove(moveMap["prevSpace"]!, moveMap["nextSpace"]!, detectPieceJson["piece"], currentSfen));
+                                currentSfen = createSfenPhase();
                               });
+
+                              // play sounds
+                              List<String> filenames = createAudioFilenameList();
+                              for (String filename in filenames) {
+                                _player.load("sounds/$filename.mp3");
+                                _player.play("sounds/$filename.mp3");
+                                await Future.delayed(const Duration(seconds: 1));
+                              }
                             });
                           });
                         },

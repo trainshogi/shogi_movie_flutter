@@ -39,6 +39,7 @@ dependencies:
   audioplayers: ^0.20.1
   camera: ^0.9.4
   url_launcher: ^6.0.12
+  flutter_isolate: ^2.0.0
 
 dev_dependencies:
   flutter_test:

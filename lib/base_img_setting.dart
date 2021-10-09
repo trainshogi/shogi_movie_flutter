@@ -164,14 +164,15 @@ class _BaseImgSettingState extends State<BaseImgSetting> {
           _points, getPainterSize());
       String directoryPath = await FileController.directoryPath(
           widget.dirName);
-      platformPieceDetect.invokeMethod(
-          'initial_piece_detect',
-          <String, String>{
-            'srcPath': imageFile!.path,
-            'points': relativePoints.toString(),
-            'dirName': directoryPath
-          }
-      ).then((result) =>
+      var requestMap = {
+        "methodName": 'initial_piece_detect',
+        "args": <String, String>{
+          'srcPath': imageFile!.path,
+          'points': relativePoints.toString(),
+          'dirName': directoryPath
+        }
+      };
+      callInvokeMethod(requestMap).then((result) =>
           setState(() {
             // _pieceDetect = pieceDetect;
             String imgPath = jsonDecode(result)['imgPath'];
@@ -186,8 +187,6 @@ class _BaseImgSettingState extends State<BaseImgSetting> {
             }
           })
       );
-
-
     }
   }
 
@@ -229,8 +228,15 @@ class _BaseImgSettingState extends State<BaseImgSetting> {
                       padding: const EdgeInsets.all(3.0),
                       child: ElevatedButton(
                         child: const Text('初期駒チェック'),
-                        onPressed: () {
+                        onPressed: () async {
+                          // 全画面プログレスダイアログを表示
+                          setState(() {
+                            showProgressDialog(context);
+                          });
                           _detectPiecePlace();
+                          setState(() {
+                            Navigator.of(context).pop();
+                          });
                         },
                       )),
                   Container(

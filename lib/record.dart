@@ -29,6 +29,7 @@ class _RecordState extends State<Record> {
   final AudioCache _player = AudioCache(fixedPlayer: AudioPlayer());
   int currentMoveNumber = 0;
   String currentSfen = "";
+  String currentPiecePlace = "ZZZZZZZZZ/1Z11111Z1/ZZZZZZZZZ/111111111/111111111/111111111/ZZZZZZZZZ/1Z11111Z1/ZZZZZZZZZ";
   String currentKif = "";
   List<String> sfenMoveList = [];
   //カメラリスト
@@ -120,6 +121,17 @@ class _RecordState extends State<Record> {
                             // recognize image
                             FileController.directoryPath(widget.dirName).then((value) {
                               directoryPath = value;
+                              // get piece place
+                              platformPieceDetect.invokeMethod(
+                                  'piece_place_detect',
+                                  <String, String>{
+                                    'srcPath': imageFilePath!,
+                                    'points': widget.relativePoints.toString(),
+                                    'dirName': directoryPath
+                                  }
+                              );
+                              // detect movement
+                              // detect piece
                               platformPieceDetect.invokeMethod(
                                   'piece_detect',
                                   <String, String>{

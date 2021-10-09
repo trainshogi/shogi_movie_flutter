@@ -23,6 +23,7 @@ import org.json.JSONObject
 import org.opencv.core.Mat
 
 import org.opencv.core.Scalar
+import kotlin.concurrent.thread
 import kotlin.streams.toList
 
 
@@ -179,12 +180,6 @@ class MainActivity: FlutterActivity() {
             }
             else if (call.method == "initial_piece_detect") {
 
-                // load opencv
-                if (!OpenCVLoader.initDebug())
-                    Log.e("OpenCV", "Unable to load OpenCV!")
-                else
-                    Log.d("OpenCV", "OpenCV loaded Successfully!")
-
                 // get variable
                 val srcPath = call.argument<String>("srcPath").toString()
                 val dirName = call.argument<String>("dirName").toString()
@@ -193,39 +188,12 @@ class MainActivity: FlutterActivity() {
                 Log.d("OpenCV", dirName)
                 Log.d("OpenCV", points)
 
-
-                val relativePoints = util.offsetString2FloatList(points)
-                val positionJson = JSONObject(getCurrentPosition(
-                    srcpath = srcPath,
-                    relativePoints = relativePoints
-                ))
-
-                var sfen = "111111111/111111111/111111111/111111111/111111111/111111111/111111111/111111111/111111111"
-                val placeSfen: String = positionJson.get("sfen") as String
-                val matCropped = file2crop9x9Mat(srcPath, relativePoints)
-                placeSfen.toCharArray().forEachIndexed{ index, char ->
-                    if (char == 'Z') {
-                        val targetPlaceMat = spaceCroppedMat(matCropped, listOf(index%10, index/10))
-                        val detectJsonObject = JSONObject(detectPiece(dirName, listOf(), listOf(), targetPlaceMat))
-                        val pieceNameIndex = pieceNameListEnglish.indexOf(detectJsonObject.getString("piece"))
-                        if (pieceNameIndex != -1) {
-                            sfen = util.replaceChar(sfen, index, pieceNameListSfen[pieceNameIndex].toCharArray()[0])
-                        }
+                thread {
+                    val rootObjectString = initial_piece_detect(srcPath, dirName, points)
+                    runOnUiThread {
+                        result.success(rootObjectString)
                     }
                 }
-
-                // Mat を Bitmap に変換して保存
-                val img = fileController.readImageFromFileWithRotate(srcPath)
-                val imgResult = Bitmap.createBitmap(matCropped.width(), matCropped.height(), img!!.config)
-                Utils.matToBitmap(matCropped, imgResult)
-                val imgPath = fileController.saveImageToFile(imgResult, getExternalFilesDir(Environment.DIRECTORY_PICTURES))
-
-                // create json
-                val rootObject = JSONObject()
-                rootObject.put("imgPath", imgPath)
-                rootObject.put("sfen", util.sfenSpaceMerge(sfen))
-                Log.d("OpenCV", rootObject.toString())
-                result.success(rootObject.toString())
             } else {
                 result.notImplemented()
             }
@@ -242,6 +210,48 @@ class MainActivity: FlutterActivity() {
             batteryLevel = intent!!.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) * 100 / intent.getIntExtra(BatteryManager.EXTRA_SCALE, -1)
         }
         return batteryLevel
+    }
+
+    @RequiresApi(VERSION_CODES.N)
+    private fun initial_piece_detect(srcPath: String, dirName: String, points: String): String {
+        // load opencv
+        if (!OpenCVLoader.initDebug())
+            Log.e("OpenCV", "Unable to load OpenCV!")
+        else
+            Log.d("OpenCV", "OpenCV loaded Successfully!")
+
+        val relativePoints = util.offsetString2FloatList(points)
+        val positionJson = JSONObject(getCurrentPosition(
+            srcpath = srcPath,
+            relativePoints = relativePoints
+        ))
+
+        var sfen = "111111111/111111111/111111111/111111111/111111111/111111111/111111111/111111111/111111111"
+        val placeSfen: String = positionJson.get("sfen") as String
+        val matCropped = file2crop9x9Mat(srcPath, relativePoints)
+        placeSfen.toCharArray().forEachIndexed{ index, char ->
+            if (char == 'Z') {
+                val targetPlaceMat = spaceCroppedMat(matCropped, listOf(index%10, index/10))
+                val detectJsonObject = JSONObject(detectPiece(dirName, listOf(), listOf(), targetPlaceMat))
+                val pieceNameIndex = pieceNameListEnglish.indexOf(detectJsonObject.getString("piece"))
+                if (pieceNameIndex != -1) {
+                    sfen = util.replaceChar(sfen, index, pieceNameListSfen[pieceNameIndex].toCharArray()[0])
+                }
+            }
+        }
+
+        // Mat を Bitmap に変換して保存
+        val img = fileController.readImageFromFileWithRotate(srcPath)
+        val imgResult = Bitmap.createBitmap(matCropped.width(), matCropped.height(), img!!.config)
+        Utils.matToBitmap(matCropped, imgResult)
+        val imgPath = fileController.saveImageToFile(imgResult, getExternalFilesDir(Environment.DIRECTORY_PICTURES))
+
+        // create json
+        val rootObject = JSONObject()
+        rootObject.put("imgPath", imgPath)
+        rootObject.put("sfen", util.sfenSpaceMerge(sfen))
+        Log.d("OpenCV", rootObject.toString())
+        return rootObject.toString()
     }
 
     // perspective transform

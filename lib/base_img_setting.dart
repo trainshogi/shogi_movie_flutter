@@ -165,6 +165,7 @@ class _BaseImgSettingState extends State<BaseImgSetting> {
       String directoryPath = await FileController.directoryPath(
           widget.dirName);
       var requestMap = {
+        "platform": platformPieceDetect,
         "methodName": 'initial_piece_detect',
         "args": <String, String>{
           'srcPath': imageFile!.path,
@@ -172,7 +173,7 @@ class _BaseImgSettingState extends State<BaseImgSetting> {
           'dirName': directoryPath
         }
       };
-      callInvokeMethod(requestMap).then((result) =>
+      return callInvokeMethod(requestMap).then((result) =>
           setState(() {
             // _pieceDetect = pieceDetect;
             String imgPath = jsonDecode(result)['imgPath'];
@@ -228,7 +229,7 @@ class _BaseImgSettingState extends State<BaseImgSetting> {
                       padding: const EdgeInsets.all(3.0),
                       child: ElevatedButton(
                         child: const Text('初期駒チェック'),
-                        onPressed: () async {
+                        onPressed: () {
                           // 全画面プログレスダイアログを表示
                           setState(() {
                             showProgressDialog(context);

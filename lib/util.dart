@@ -80,10 +80,10 @@ void successDialog(BuildContext context, String alert_sentence) {
 
 // call invokeMethod
 Future<dynamic> callInvokeMethod(Map<String, dynamic> map) {
-  var platformPieceDetect = const MethodChannel('com.nkkuma.dev/piece_detect');
+  var platform = map['platform'] as MethodChannel;
   var methodName = map['methodName'];
   var args = map['args'];
-  return platformPieceDetect.invokeMethod(methodName, args);
+  return platform.invokeMethod(methodName, args);
 }
 
 

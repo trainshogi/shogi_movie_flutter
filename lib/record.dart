@@ -153,7 +153,8 @@ class _RecordState extends State<Record> {
                                 currentMoveNumber += 1;
                                 currentKif = createKif(moveMap["prevSpace"]!, moveMap["nextSpace"]!, detectPieceJson["piece"], currentSfen);
                                 sfenMoveList.add(createSfenMove(moveMap["prevSpace"]!, moveMap["nextSpace"]!, detectPieceJson["piece"], currentSfen));
-                                currentSfen = createSfenPhase();
+                                currentPiecePlace = detectPlaceJson["sfen"];
+                                currentSfen = createSfenPhase(moveMap["prevSpace"]!, moveMap["nextSpace"]!, detectPieceJson["piece"], currentSfen);
                               });
 
                               // play sounds

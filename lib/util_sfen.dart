@@ -41,6 +41,31 @@ List<String> sfenSpacePurge(String sfen) {
   return sfenPurge;
 }
 
+String sfenPurge2SfenString(List<String> sfenPurge) {
+  var sfen = "";
+  var spaceNum = 0;
+  sfenPurge.asMap().forEach((int i, String str) {
+    if (str == " 1") {
+      spaceNum += 1;
+    }
+    else {
+      if (spaceNum != 0) {
+        sfen += spaceNum.toString();
+        spaceNum = 0;
+      }
+      sfen += str.replaceFirst(" ", "");
+    }
+    if (i != 0 && i%9 == 0) {
+      if (spaceNum != 0) {
+        sfen += spaceNum.toString();
+        spaceNum = 0;
+      }
+      sfen += "/";
+    }
+  });
+  return sfen;
+}
+
 String sfenPieceName2Filename(String pieceNameSfen) {
   return (pieceNameListSfen.indexOf(pieceNameSfen) + 10).toString();
 }
@@ -220,8 +245,11 @@ String createSfenMove(int prevSpace, int nextSpace, String pieceNameEnglish, Str
   // return [];
 }
 
-String createSfenPhase() {
-  return "";
+String createSfenPhase(int prevSpace, int nextSpace, String pieceNameEnglish, String prevSfen) {
+  List<String> sfenPurgeList = sfenSpacePurge(prevSfen);
+  sfenPurgeList[prevSpace] = " 1";
+  sfenPurgeList[nextSpace] = pieceNameListSfen[pieceNameEnglish.indexOf(pieceNameEnglish)];
+  return sfenPurge2SfenString(sfenPurgeList);
 }
 
 List<String> createAudioFilenameList(int prevSpace, int nextSpace, String pieceNameEnglish, String prevSfen) {

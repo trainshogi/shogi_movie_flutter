@@ -13,6 +13,7 @@ import 'file_controller.dart';
 import 'frame_painter.dart';
 import 'util.dart';
 import 'util_sfen.dart';
+import "overlay_loading_molecules.dart";
 
 class BaseImgSetting extends StatefulWidget {
   final String dirName;
@@ -184,65 +185,71 @@ class _BaseImgSettingState extends State<BaseImgSetting> {
         appBar: AppBar(
           title: const Text('初期盤面取得'),
         ),
-        body: Center(
-            child: Container(
-              alignment: Alignment.center,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(10),
-                    child: imageAndPainter(),
-                  ),
-                  progressIndicatorOrEmpty(onProgress),
-                  Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                            padding: const EdgeInsets.all(3.0),
-                            child: ElevatedButton(
-                              child: const Text('カメラで撮影'),
-                              onPressed: () {
-                                // _getAndSaveImageFromDevice(ImageSource.camera);
-                                _getAndSaveImageFromDevice(ImageSource.gallery);
-                              },
-                            )),
-                        Container(
-                            padding: const EdgeInsets.all(3.0),
-                            child: ElevatedButton(
-                              child: const Text('初期駒チェック'),
-                              onPressed: () {
-                                // 全画面プログレスダイアログを表示
-                                Wakelock.enable();
-                                setState(() {
-                                  onProgress = true;
-                                });
-                                _detectPiecePlace().then((value) =>
+        body: Stack(
+          clipBehavior: Clip.hardEdge,
+          fit: StackFit.expand,
+          children: <Widget>[
+            Center(
+                child: Container(
+                  alignment: Alignment.center,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(10),
+                        child: imageAndPainter(),
+                      ),
+                      Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                                padding: const EdgeInsets.all(3.0),
+                                child: ElevatedButton(
+                                  child: const Text('カメラで撮影'),
+                                  onPressed: () {
+                                    // _getAndSaveImageFromDevice(ImageSource.camera);
+                                    _getAndSaveImageFromDevice(ImageSource.gallery);
+                                  },
+                                )),
+                            Container(
+                                padding: const EdgeInsets.all(3.0),
+                                child: ElevatedButton(
+                                  child: const Text('初期駒チェック'),
+                                  onPressed: () {
+                                    // 全画面プログレスダイアログを表示
+                                    Wakelock.enable();
                                     setState(() {
-                                      onProgress = false;
-                                      Wakelock.disable();
-                                    })
-                                );
-                              },
-                            )),
-                        Container(
-                            padding: const EdgeInsets.all(3.0),
-                            child: ElevatedButton(
-                              child: const Text('スタート'),
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(builder: (context) => Record(dirName: widget.dirName, relativePoints: relativePoints!)),
-                                );
-                              },
-                            )),
-                      ]
+                                      onProgress = true;
+                                    });
+                                    _detectPiecePlace().then((value) =>
+                                        setState(() {
+                                          onProgress = false;
+                                          Wakelock.disable();
+                                        })
+                                    );
+                                  },
+                                )),
+                            Container(
+                                padding: const EdgeInsets.all(3.0),
+                                child: ElevatedButton(
+                                  child: const Text('スタート'),
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(builder: (context) => Record(dirName: widget.dirName, relativePoints: relativePoints!)),
+                                    );
+                                  },
+                                )),
+                          ]
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            )
+                )
+            ),
+            OverlayLoadingMolecules(visible: onProgress)
+          ]
         )
     );
   }

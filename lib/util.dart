@@ -1,4 +1,5 @@
 
+import 'dart:io';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -100,4 +101,13 @@ void showProgressDialog(BuildContext context) {
         );
       }
   );
+}
+
+Widget progressIndicatorOrEmpty(bool onProgress) {
+  if (onProgress) {
+    return const CircularProgressIndicator();
+  }
+  else {
+    return Container();
+  }
 }

@@ -186,7 +186,7 @@ String intSpace2SfenString(int space) {
 
 String createKif(int prevSpace, int nextSpace, String pieceNameEnglish, String prevSfen) {
   String place = intSpace2KifString(nextSpace);
-  String piece = pieceNameListJapanese[pieceNameListEnglish.indexOf(pieceNameEnglish)];
+  String piece = pieceNameListJapaneseOneChar[pieceNameListEnglish.indexOf(pieceNameEnglish)];
   return place + piece;
   // if (prevPiece.isEmpty) {
   //   // put piece
@@ -224,6 +224,8 @@ String createSfenPhase() {
   return "";
 }
 
-List<String> createAudioFilenameList() {
-  return [""];
+List<String> createAudioFilenameList(int prevSpace, int nextSpace, String pieceNameEnglish, String prevSfen) {
+  List<String> place = intSpace2KifString(nextSpace).split("");
+  String piece = (pieceNameListEnglish.indexOf(pieceNameEnglish) + 10).toString();
+  return [place[0], place[1], piece];
 }

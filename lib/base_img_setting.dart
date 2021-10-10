@@ -28,6 +28,7 @@ class _BaseImgSettingState extends State<BaseImgSetting> {
   int movePointIndex = 0;
   GlobalKey globalKeyForPainter = GlobalKey();
   String currentSfen = "";
+  bool onProgress = false;
 
   // タッチした点を覚えておく
   final _points = <Offset>[];
@@ -128,26 +129,6 @@ class _BaseImgSettingState extends State<BaseImgSetting> {
     }
   }
 
-
-  static const platform = MethodChannel('samples.flutter.dev/battery');
-
-  String _batteryLevel = 'Unknown battery level.';
-
-  Future<void> _getBatteryLevel() async {
-    // Get battery level.
-    String batteryLevel;
-    try {
-      final int result = await platform.invokeMethod('getBatteryLevel');
-      batteryLevel = 'Battery level at $result % .';
-    } on PlatformException catch (e) {
-      batteryLevel = "Failed to get battery level: '${e.message}'.";
-    }
-
-    setState(() {
-      _batteryLevel = batteryLevel;
-    });
-  }
-
   static const platformPieceDetect = MethodChannel('com.nkkuma.dev/piece_detect');
 
   Size getPainterSize() {
@@ -193,7 +174,6 @@ class _BaseImgSettingState extends State<BaseImgSetting> {
 
   @override
   void initState() {
-    _getBatteryLevel();
     super.initState();
   }
 
@@ -214,8 +194,7 @@ class _BaseImgSettingState extends State<BaseImgSetting> {
                     padding: const EdgeInsets.all(10),
                     child: imageAndPainter(),
                   ),
-                  Text(_batteryLevel),
-                  // Text(_pieceDetect),
+                  progressIndicatorOrEmpty(onProgress),
                   Container(
                       padding: const EdgeInsets.all(3.0),
                       child: ElevatedButton(
@@ -232,12 +211,13 @@ class _BaseImgSettingState extends State<BaseImgSetting> {
                         onPressed: () {
                           // 全画面プログレスダイアログを表示
                           setState(() {
-                            showProgressDialog(context);
+                            onProgress = true;
                           });
-                          _detectPiecePlace();
-                          setState(() {
-                            Navigator.of(context).pop();
-                          });
+                          _detectPiecePlace().then((value) =>
+                              setState(() {
+                                onProgress = false;
+                              })
+                          );
                         },
                       )),
                   Container(

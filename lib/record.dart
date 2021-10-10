@@ -77,14 +77,14 @@ class _RecordState extends State<Record> {
     super.initState();
     _player.load("sounds/initial.mp3");
     _player.play("sounds/initial.mp3");
-    initCamera();
+    // initCamera();
     currentSfen = initial_sfen;
   }
 
   @override
   void dispose() {
     // Dispose of the controller when the widget is disposed.
-    _controller!.dispose();
+    // _controller!.dispose();
     super.dispose();
   }
 
@@ -143,7 +143,7 @@ class _RecordState extends State<Record> {
                                   'srcPath': imageFilePath!,
                                   'dirName': directoryPath,
                                   'points': widget.relativePoints.toString(),
-                                  'space': (moveMap["prevSpace"]!/10).toString() + "," + (moveMap["prevSpace"]!%10).toString()
+                                  'space': (moveMap["nextSpace"]!%10).toString() + "," + (moveMap["nextSpace"]!/10).floor().toString()
                                 }
                               };
                               var detectPieceJson = jsonDecode(await callInvokeMethod(pieceRequestMap) as String);
@@ -157,7 +157,7 @@ class _RecordState extends State<Record> {
                               });
 
                               // play sounds
-                              List<String> filenames = createAudioFilenameList();
+                              List<String> filenames = createAudioFilenameList(moveMap["prevSpace"]!, moveMap["nextSpace"]!, detectPieceJson["piece"], currentSfen);
                               for (String filename in filenames) {
                                 _player.load("sounds/$filename.mp3");
                                 _player.play("sounds/$filename.mp3");

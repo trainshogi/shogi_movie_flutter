@@ -196,44 +196,50 @@ class _BaseImgSettingState extends State<BaseImgSetting> {
                     child: imageAndPainter(),
                   ),
                   progressIndicatorOrEmpty(onProgress),
-                  Container(
-                      padding: const EdgeInsets.all(3.0),
-                      child: ElevatedButton(
-                        child: const Text('カメラで撮影'),
-                        onPressed: () {
-                          // _getAndSaveImageFromDevice(ImageSource.camera);
-                          _getAndSaveImageFromDevice(ImageSource.gallery);
-                        },
-                      )),
-                  Container(
-                      padding: const EdgeInsets.all(3.0),
-                      child: ElevatedButton(
-                        child: const Text('初期駒チェック'),
-                        onPressed: () {
-                          // 全画面プログレスダイアログを表示
-                          Wakelock.enable();
-                          setState(() {
-                            onProgress = true;
-                          });
-                          _detectPiecePlace().then((value) =>
-                              setState(() {
-                                onProgress = false;
-                                Wakelock.disable();
-                              })
-                          );
-                        },
-                      )),
-                  Container(
-                      padding: const EdgeInsets.all(3.0),
-                      child: ElevatedButton(
-                        child: const Text('スタート'),
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => Record(dirName: widget.dirName, relativePoints: relativePoints!)),
-                          );
-                        },
-                      )),
+                  Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                            padding: const EdgeInsets.all(3.0),
+                            child: ElevatedButton(
+                              child: const Text('カメラで撮影'),
+                              onPressed: () {
+                                // _getAndSaveImageFromDevice(ImageSource.camera);
+                                _getAndSaveImageFromDevice(ImageSource.gallery);
+                              },
+                            )),
+                        Container(
+                            padding: const EdgeInsets.all(3.0),
+                            child: ElevatedButton(
+                              child: const Text('初期駒チェック'),
+                              onPressed: () {
+                                // 全画面プログレスダイアログを表示
+                                Wakelock.enable();
+                                setState(() {
+                                  onProgress = true;
+                                });
+                                _detectPiecePlace().then((value) =>
+                                    setState(() {
+                                      onProgress = false;
+                                      Wakelock.disable();
+                                    })
+                                );
+                              },
+                            )),
+                        Container(
+                            padding: const EdgeInsets.all(3.0),
+                            child: ElevatedButton(
+                              child: const Text('スタート'),
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (context) => Record(dirName: widget.dirName, relativePoints: relativePoints!)),
+                                );
+                              },
+                            )),
+                      ]
+                  ),
                 ],
               ),
             )

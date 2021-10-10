@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shogi_movie_flutter/record.dart';
+import 'package:wakelock/wakelock.dart';
 
 import 'file_controller.dart';
 import 'frame_painter.dart';
@@ -210,12 +211,14 @@ class _BaseImgSettingState extends State<BaseImgSetting> {
                         child: const Text('初期駒チェック'),
                         onPressed: () {
                           // 全画面プログレスダイアログを表示
+                          Wakelock.enable();
                           setState(() {
                             onProgress = true;
                           });
                           _detectPiecePlace().then((value) =>
                               setState(() {
                                 onProgress = false;
+                                Wakelock.disable();
                               })
                           );
                         },

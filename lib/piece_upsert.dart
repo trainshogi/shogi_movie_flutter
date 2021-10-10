@@ -213,6 +213,7 @@ class _PieceUpsertState extends State<PieceUpsert> {
       _showErrorAlertDialog('駒の枠が設定されていません。');
     }
     else if (pieceNameIndex == pieceNameListJapanese.length - 1) {
+      _saveList();
       _showErrorAlertDialog('駒の設定が終了しました。');
     }
     else {

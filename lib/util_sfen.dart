@@ -1,25 +1,29 @@
 String initial_sfen = "lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL";
 
 List<String> pieceNameListJapanese = [
-    "歩兵", "香車", "桂馬", "銀将", "金将", "角行", "飛車", "王将",
-    "と金", "成香", "成桂", "成銀", "竜馬", "龍王"
+  "歩兵", "香車", "桂馬", "銀将", "金将", "角行", "飛車", "王将", "玉将",
+  "と金", "成香", "成桂", "成銀", "竜馬", "龍王",
+  "v歩兵", "v香車", "v桂馬", "v銀将", "v金将", "v角行", "v飛車", "v王将", "v玉将",
+  "vと金", "v成香", "v成桂", "v成銀", "v竜馬", "v龍王"
 ];
 
 List<String> pieceNameListJapaneseOneChar = [
-  "歩", "香", "桂", "銀", "金", "角", "飛", "王",
-  "と", "杏", "圭", "全", "馬", "龍"
+  "歩", "香", "桂", "銀", "金", "角", "飛", "王", "玉",
+  "と", "杏", "圭", "全", "馬", "龍",
+  "v歩", "v香", "v桂", "v銀", "v金", "v角", "v飛", "v王", "v玉",
+  "vと", "v杏", "v圭", "v全", "v馬", "v龍"
 ];
 List<String> pieceNameListEnglish = [
-//        "vfu"
-  "fu", "kyo", "kei", "gin", "kin", "kaku", "hisya", "ou",
-  "vfu", "vkyo", "vkei", "vgin", "vkin", "vkaku", "vhisya", "vou"
-//        "fu", "kyo", "kei", "gin", "kin", "kaku", "hisya", "ou",
-//        "nfu", "nkyo", "nkei", "ngin", "nkaku", "nhisya"
+  "fu", "kyo", "kei", "gin", "kin", "kaku", "hisya", "ou", "gyoku",
+  "nfu", "nkyo", "nkei", "ngin", "nkaku", "nhisya",
+  "vfu", "vkyo", "vkei", "vgin", "vkin", "vkaku", "vhisya", "vou", "vgyoku",
+  "vnfu", "vnkyo", "vnkei", "vngin", "vnkaku", "vnhisya"
 ];
 List<String> pieceNameListSfen = [
-//        "p"
-    "P", "L", "N", "S", "G", "B", "R", "K", "p", "l", "n", "s", "g", "b", "r", "k"
-//        "+P", "+L", "+N", "+S", "+B", "+R"
+  "P", "L", "N", "S", "G", "B", "R", "K", "K",
+  "+P", "+L", "+N", "+S", "+B", "+R",
+  "p", "l", "n", "s", "g", "b", "r", "k", "k",
+  "+p", "+l", "+n", "+s", "+b", "+r"
 ];
 
 bool isInitialPosition(String sfen){
@@ -211,7 +215,7 @@ String intSpace2SfenString(int space) {
 
 String createKif(int prevSpace, int nextSpace, String pieceNameEnglish, String prevSfen) {
   String place = intSpace2KifString(nextSpace);
-  String piece = pieceNameListJapaneseOneChar[pieceNameListEnglish.indexOf(pieceNameEnglish)];
+  String piece = pieceNameListJapaneseOneChar[pieceNameListEnglish.indexOf(pieceNameEnglish)].replaceFirst("v", "");
   return place + piece;
   // if (prevPiece.isEmpty) {
   //   // put piece

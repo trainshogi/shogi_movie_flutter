@@ -5,6 +5,8 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'file_controller.dart';
+
 List<Offset> absolutePoints2relativePoints(List<Offset> points, Size size) {
   // get PainterSize
   print("ウィジェットのサイズ: $size");
@@ -79,6 +81,25 @@ void successDialog(BuildContext context, String alert_sentence) {
   );
 }
 
+void textDialog(BuildContext context, String alert_sentence) {
+  showDialog(
+    context: context,
+    builder: (_) {
+      return AlertDialog(
+        title: const Text("成功"),
+        content: Text(alert_sentence),
+        actions: <Widget>[
+          // ボタン領域
+          TextButton(
+            child: const Text("OK"),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ],
+      );
+    },
+  );
+}
+
 // call invokeMethod
 Future<dynamic> callInvokeMethod(Map<String, dynamic> map) {
   var platform = map['platform'] as MethodChannel;
@@ -110,4 +131,21 @@ Widget progressIndicatorOrEmpty(bool onProgress) {
   else {
     return Container();
   }
+}
+
+Future<Map<String, bool>> getSavedPieceNameMap() async {
+  int pieceFileNum = 30;
+  List<String> exceptFolder = ["flutter_assets", "tmp"];
+  Map<String, bool> pieceNameMap = {};
+  List<FileSystemEntity> folderList = await FileController.directoryFileList("");
+  for (var folder in folderList) {
+    if (folder is Directory) {
+      String folderName = folder.path.split("/").removeLast();
+      if (!exceptFolder.contains(folderName)) {
+        List fileList = await FileController.directoryFileList(folderName);
+        pieceNameMap[folderName] = (fileList.length == pieceFileNum);
+      }
+    }
+  }
+  return pieceNameMap;
 }

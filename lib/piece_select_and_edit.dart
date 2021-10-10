@@ -1,7 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:shogi_movie_flutter/base_img_setting.dart';
 import 'package:shogi_movie_flutter/piece_upsert.dart';
+import 'package:shogi_movie_flutter/util.dart';
+
+import 'file_controller.dart';
 
 class PieceSelectAndEdit extends StatefulWidget {
   const PieceSelectAndEdit({Key? key}) : super(key: key);
@@ -11,8 +13,18 @@ class PieceSelectAndEdit extends StatefulWidget {
 }
 
 class _PieceSelectAndEditState extends State<PieceSelectAndEdit> {
+  List<Widget> savedPieceWidgetList = [];
 
-  // static const TextStyle defaultButtonTextStyle = TextStyle(fontSize: 40);
+  Future<void> getSavedPieceWidgetList() async {
+    List<Widget> widgetList = [];
+    Map<String, bool> savedPieceList = await getSavedPieceNameMap();
+    savedPieceList.forEach((key, value) {
+      widgetList.add(savedPieceWidget(key));
+    });
+    setState(() {
+      savedPieceWidgetList = widgetList;
+    });
+  }
 
   Widget savedPieceWidget(String text) {
     return Row(
@@ -55,29 +67,131 @@ class _PieceSelectAndEditState extends State<PieceSelectAndEdit> {
             ),
           ),
           onPressed: () {
+            showDialog(
+                context: context,
+                builder: (_) {
+                  return AlertDialog(
+                      title: const Text('削除しても良いですか？'),
+                      actions: <Widget>[
+                        ElevatedButton(
+                            child: const Text('キャンセル'),
+                            onPressed: () {
+                              Navigator.pop(context);
+                            }),
+                        ElevatedButton(
+                            child: const Text('はい'),
+                            onPressed: () async {
+                              await FileController.deleteFolder(text);
+                              Navigator.pop(context);
+                              successDialog(context, "削除しました");
+                              setState(() {
+                                getSavedPieceWidgetList();
+                              });
+                            }),
+                      ]
+                  );
+                }
+            );
           },
         ),
       ],
     );
   }
 
+  Widget plusButton() {
+    var _pieceNameController = TextEditingController();
+    return ElevatedButton(
+      child: const Text('追加'),
+      style: ElevatedButton.styleFrom(
+        primary: Colors.blueAccent,
+        onPrimary: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+      ),
+      onPressed: () {
+        showDialog(
+          context: context,
+          builder: (_) {
+            return AlertDialog(
+                title: const Text('駒の名前を入力してください。'),
+                content: TextField(
+                  controller: _pieceNameController,
+                  decoration: const InputDecoration(hintText: '駒1'),
+                  autofocus: true,
+                ),
+                actions: <Widget>[
+                  ElevatedButton(
+                      child: const Text('キャンセル'),
+                      onPressed: () {
+                        Navigator.pop(context);
+                      }),
+                  ElevatedButton(
+                      child: const Text('追加'),
+                      onPressed: () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) =>
+                              PieceUpsert(dirName: _pieceNameController.text)),
+                        );
+                      }),
+                ]
+            );
+          }
+        );
+      },
+    );
+  }
+
+  Widget reloadButton() {
+    return Ink(
+      decoration: const ShapeDecoration(
+        color: Colors.blueAccent,
+        shape: CircleBorder(),
+      ),
+      child: IconButton(
+        icon: const Icon(Icons.refresh),
+        color: Colors.white,
+        onPressed: () {
+          setState(() {
+            getSavedPieceWidgetList();
+          });
+        },
+      ),
+    );
+  }
+
+  @override
+  void initState(){
+    getSavedPieceWidgetList();
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('駒選択'),
+        title: const Text('編集駒選択'),
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: <Widget>[
-            // const Text('駒選択', style: defaultButtonTextStyle),
-            savedPieceWidget('駒１'),
-            savedPieceWidget('駒２'),
-            savedPieceWidget('駒３'),
-          ]
+      body: Stack(children: [
+        Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: savedPieceWidgetList
+          ),
         ),
-      )
+        Positioned(
+          top: 10.0,
+          right: 10.0,
+          child: reloadButton(),
+        ),
+        Positioned(
+          bottom: 10.0,
+          right: 10.0,
+          child: plusButton(),
+        ),
+      ])
     );
   }
 }

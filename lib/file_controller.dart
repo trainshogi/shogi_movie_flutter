@@ -18,6 +18,11 @@ class FileController {
     return directory.path;
   }
 
+  static Future<List<FileSystemEntity>> directoryFileList(String dirName) async {
+    final path = await localPath;
+    return Directory(path+"/"+dirName).list(recursive: false).toList();
+  }
+
   // ドキュメントの画像を取得する。
   static Future loadLocalImage(String dirName, String filename) async {
     final path = await directoryPath(dirName);
@@ -55,5 +60,15 @@ class FileController {
     File file = File(filePath);
     var savedFile = await file.writeAsString(text);
     return savedFile;
+  }
+
+  static Future deleteFolder(String dirName) async {
+    List<FileSystemEntity> folderList = await directoryFileList("");
+    for (var folder in folderList) {
+      if (folder is Directory && folder.path.split("/").removeLast() == dirName) {
+        folder.deleteSync(recursive: true);
+        break;
+      }
+    }
   }
 }

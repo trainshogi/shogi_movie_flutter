@@ -1,7 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:shogi_movie_flutter/base_img_setting.dart';
-import 'package:shogi_movie_flutter/piece_upsert.dart';
+import 'package:shogi_movie_flutter/util.dart';
 
 class PieceSelect extends StatefulWidget {
   const PieceSelect({Key? key}) : super(key: key);
@@ -12,7 +12,18 @@ class PieceSelect extends StatefulWidget {
 
 class _PieceSelectState extends State<PieceSelect> {
 
-  // static const TextStyle defaultButtonTextStyle = TextStyle(fontSize: 40);
+  List<Widget> savedPieceWidgetList = [];
+
+  Future<void> getSavedPieceWidgetList() async {
+    List<Widget> widgetList = [];
+    Map<String, bool> savedPieceList = await getSavedPieceNameMap();
+    savedPieceList.forEach((key, value) {
+      if (value) widgetList.add(savedPieceWidget(key));
+    });
+    setState(() {
+      savedPieceWidgetList = widgetList;
+    });
+  }
 
   Widget savedPieceWidget(String text) {
     return Row(
@@ -38,6 +49,12 @@ class _PieceSelectState extends State<PieceSelect> {
   }
 
   @override
+  void initState(){
+    getSavedPieceWidgetList();
+    super.initState();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -46,12 +63,7 @@ class _PieceSelectState extends State<PieceSelect> {
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: <Widget>[
-            // const Text('駒選択', style: defaultButtonTextStyle),
-            savedPieceWidget('駒１'),
-            savedPieceWidget('駒２'),
-            savedPieceWidget('駒３'),
-          ]
+          children: savedPieceWidgetList
         ),
       )
     );

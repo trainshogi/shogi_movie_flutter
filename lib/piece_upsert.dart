@@ -161,34 +161,15 @@ class _PieceUpsertState extends State<PieceUpsert> {
     }
   }
 
-  void _showErrorAlertDialog(String text) {
-    showDialog(
-      context: context,
-      builder: (_) {
-        return AlertDialog(
-          title: const Text("エラー"),
-          content: Text(text),
-          actions: <Widget>[
-            // ボタン領域
-            TextButton(
-              child: const Text("OK"),
-              onPressed: () => Navigator.pop(context),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   void _prevPieceButtonPushed() {
     if (imageFile == null) {
-      _showErrorAlertDialog('駒の画像が設定されていません。');
+      alertDialog(context, '駒の画像が設定されていません。');
     }
     else if (_points.length < 3) {
-      _showErrorAlertDialog('駒の枠が設定されていません。');
+      alertDialog(context, '駒の枠が設定されていません。');
     }
     else if (pieceNameIndex == 0) {
-      _showErrorAlertDialog('前の駒は存在しません。');
+      alertDialog(context, '前の駒は存在しません。');
     }
     else {
       _saveList();
@@ -207,14 +188,14 @@ class _PieceUpsertState extends State<PieceUpsert> {
 
   void _nextPieceButtonPushed() {
     if (imageFile == null) {
-      _showErrorAlertDialog('駒の画像が設定されていません。');
+      alertDialog(context, '駒の画像が設定されていません。');
     }
     else if (_points.length < 3) {
-      _showErrorAlertDialog('駒の枠が設定されていません。');
+      alertDialog(context, '駒の枠が設定されていません。');
     }
     else if (pieceNameIndex == pieceNameListJapanese.length - 1) {
       _saveList();
-      _showErrorAlertDialog('駒の設定が終了しました。');
+      successDialog(context, '駒の設定が終了しました。');
     }
     else {
       _saveList();

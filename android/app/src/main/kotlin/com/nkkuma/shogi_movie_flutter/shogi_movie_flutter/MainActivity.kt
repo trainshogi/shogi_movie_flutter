@@ -73,19 +73,6 @@ class MainActivity: FlutterActivity() {
         super.onCreate(savedInstanceState)
 //        GeneratedPluginRegistrant.registerWith(this)
 
-        MethodChannel(flutterEngine!!.getDartExecutor(), CHANNEL).setMethodCallHandler { call, result ->
-            if (call.method == "getBatteryLevel") {
-                val batteryLevel = getBatteryLevel()
-                if (batteryLevel != -1) {
-                    result.success(batteryLevel)
-                } else {
-                    result.error("UNAVAILABLE", "Battery level not available.", null)
-                }
-            } else {
-                result.notImplemented()
-            }
-        }
-
         MethodChannel(flutterEngine!!.getDartExecutor(), CHANNEL_PieceDetect).setMethodCallHandler{ call, result ->
             if (call.method == "piece_detect") {
 

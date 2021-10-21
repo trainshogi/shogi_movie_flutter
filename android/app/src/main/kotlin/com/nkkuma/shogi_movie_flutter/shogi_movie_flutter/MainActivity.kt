@@ -60,7 +60,7 @@ class MainActivity: FlutterActivity() {
         listOf("kyo", "kei", "gin", "kin", "gyoku", "kin", "gin", "kei", "kyo")
     )
 
-    private val pieceSizeList = listOf(64, 62, 60, 58, 56, 54, 52, 50, 48, 47, 46, 45, 44, 43, 42, 41, 40, 37, 35)
+    private val pieceSizeList = listOf(64, 62, 60, 58, 56, 54, 52, 50, 48, 46, 44, 42, 40, 38, 36)
     private val pieceRotateList = listOf(20, 15, 10, 5, 0, -5, -10, -15, -20)
 
     private val MATCH_THRESHOLD = 0.65
@@ -157,18 +157,6 @@ class MainActivity: FlutterActivity() {
         }
     }
 
-    private fun getBatteryLevel(): Int {
-        val batteryLevel: Int
-        if (VERSION.SDK_INT >= VERSION_CODES.LOLLIPOP) {
-            val batteryManager = getSystemService(Context.BATTERY_SERVICE) as BatteryManager
-            batteryLevel = batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
-        } else {
-            val intent = ContextWrapper(applicationContext).registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
-            batteryLevel = intent!!.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) * 100 / intent.getIntExtra(BatteryManager.EXTRA_SCALE, -1)
-        }
-        return batteryLevel
-    }
-
     private fun piece_place_detect(srcPath: String, dirName: String, points: String): String {
         // load opencv
         if (!OpenCVLoader.initDebug())
@@ -232,7 +220,7 @@ class MainActivity: FlutterActivity() {
                 val detectJsonObject = JSONObject(detectPiece(dirName, listOf(), listOf(), targetPlaceMat))
                 val pieceNameIndex = pieceNameListEnglish.indexOf(detectJsonObject.getString("piece"))
                 if (pieceNameIndex != -1) {
-                    sfen = util.replaceChar(sfen, index, pieceNameListSfen[pieceNameIndex].toCharArray()[0])
+                    sfen = util.replaceStr(sfen, index, pieceNameListSfen[pieceNameIndex])
                 }
             }
         }

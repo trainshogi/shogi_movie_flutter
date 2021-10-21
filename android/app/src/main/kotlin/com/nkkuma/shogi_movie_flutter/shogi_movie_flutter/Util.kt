@@ -96,6 +96,12 @@ class Util {
         return prefix + replaceChar + suffix
     }
 
+    fun replaceStr(baseString: String, index: Int, replaceStr: String): String {
+        val prefix = baseString.substring(0, index)
+        val suffix = if (baseString.length - 1 == index) "" else baseString.substring(index + 1)
+        return prefix + replaceStr + suffix
+    }
+
     fun sfenSpaceMerge(sfen: String): String {
         var spaceNumber = 0
         val mergedSfen = StringBuilder()

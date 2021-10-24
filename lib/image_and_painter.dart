@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/cupertino.dart';
@@ -12,10 +11,12 @@ class ImageAndPainter extends StatefulWidget {
   // タッチした点を覚えておく
   final List<Offset> points;
   final Uint8List? imageBytes;
+  final Widget? imageWidget;
   const ImageAndPainter({Key? key, 
     required this.maxPointLength,
     required this.points,
-    required this.imageBytes
+    required this.imageBytes,
+    required this.imageWidget,
   }) : super(key: key);
 
   @override
@@ -76,7 +77,7 @@ class _ImageAndPainterState extends State<ImageAndPainter> {
     else {
       return Stack(
         children: [
-          Image.memory(widget.imageBytes!),
+          widget.imageWidget!,
           GestureDetector(
             // 追加イベント
             onTapUp: _addPoint,

@@ -120,6 +120,7 @@ class _BaseImgSettingState extends State<BaseImgSetting> {
                         child: ImageAndPainter(
                             maxPointLength: 4, points: _points,
                             imageBytes: imageFile?.readAsBytesSync(),
+                            imageWidget: (imageFile == null) ? null : Image.memory(imageFile!.readAsBytesSync()),
                             key: globalKeyForPainter),
                       ),
                       Row(

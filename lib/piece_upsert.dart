@@ -165,8 +165,10 @@ class _PieceUpsertState extends State<PieceUpsert> {
               ),
               Padding(
                 padding: const EdgeInsets.all(10),
-                child: ImageAndPainter(maxPointLength: -1, points: _points,
+                child: ImageAndPainter(
+                    maxPointLength: -1, points: _points,
                     imageBytes: imageFile?.readAsBytesSync(),
+                    imageWidget: (imageFile == null) ? null : Image.memory(imageFile!.readAsBytesSync()),
                     key: globalKeyForPainter),
               ),
               Container(

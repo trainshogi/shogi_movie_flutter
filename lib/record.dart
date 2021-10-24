@@ -144,34 +144,81 @@ class _RecordState extends State<Record> {
                                 }
                               };
                               var detectPlaceJson = jsonDecode(await callInvokeMethod(placeRequestMap) as String);
+                              String piecePlace = detectPlaceJson["sfen"];
                               print(detectPlaceJson.toString());
+
                               // detect movement
                               var moveMap = getMovement(currentPiecePlace, detectPlaceJson["sfen"]);
+
                               // detect piece
-                              Map<String, dynamic> pieceRequestMap = {
-                                "platform": platformPieceDetect,
-                                "methodName": "one_piece_detect",
-                                "args": {
-                                  'srcPath': imageFilePath!,
-                                  'dirName': directoryPath,
-                                  'points': widget.relativePoints.toString(),
-                                  'space': (moveMap["nextSpace"]!%10).toString() + "," + (moveMap["nextSpace"]!/10).floor().toString()
-                                }
-                              };
-                              var detectPieceJson = jsonDecode(await callInvokeMethod(pieceRequestMap) as String);
+                              int prevSpace = moveMap["prevSpace"]!;
+                              int nextSpace = moveMap["nextSpace"]!;
+                              String prevPiece = (prevSpace != -1) ? getPieceFromSfen(currentSfen, prevSpace) : "";
+                              String piece;
+                              if (prevSpace > -1 && nextSpace > -1) {
+                                // if user moves piece, just detect nextSpace's piece
+                                piece = prevPiece;
+                                Map<String, dynamic> pieceRequestMap = {
+                                  "platform": platformPieceDetect,
+                                  "methodName": "one_piece_detect",
+                                  "args": {
+                                    'srcPath': imageFilePath!,
+                                    'dirName': directoryPath,
+                                    'points': widget.relativePoints.toString(),
+                                    'space': (moveMap["nextSpace"]!%10).toString() + "," + (moveMap["nextSpace"]!/10).floor().toString()
+                                  }
+                                };
+                                var detectPieceJson = jsonDecode(await callInvokeMethod(pieceRequestMap) as String);
+                                String nextPiece = detectPieceJson["piece"];
+                                // if prevPiece and nextPiece is different, it is "nari"
+                              }
+                              else if (prevSpace > -1) {
+                                // if user put piece, just detect nextSpace's piece
+                                Map<String, dynamic> pieceRequestMap = {
+                                  "platform": platformPieceDetect,
+                                  "methodName": "one_piece_detect",
+                                  "args": {
+                                    'srcPath': imageFilePath!,
+                                    'dirName': directoryPath,
+                                    'points': widget.relativePoints.toString(),
+                                    'space': (moveMap["nextSpace"]!%10).toString() + "," + (moveMap["nextSpace"]!/10).floor().toString()
+                                  }
+                                };
+                                var detectPieceJson = jsonDecode(await callInvokeMethod(pieceRequestMap) as String);
+                                piece = detectPieceJson["piece"];
+                              }
+                              else {
+                                // if user take piece, search all pieces and get diff
+                                piece = prevPiece;
+                                Map<String, dynamic> pieceRequestMap = {
+                                  "platform": platformPieceDetect,
+                                  "methodName": "initial_piece_detect",
+                                  "args": {
+                                    'srcPath': imageFilePath!,
+                                    'dirName': directoryPath,
+                                    'points': widget.relativePoints.toString()
+                                  }
+                                };
+                                var detectPieceJson = jsonDecode(await callInvokeMethod(pieceRequestMap) as String);
+                                var moveMap = getMovement(currentSfen, detectPieceJson["sfen"]);
+                                prevSpace = moveMap["prevSpace"]!;
+                                nextSpace = moveMap["nextSpace"]!;
+                                String nextPiece = getPieceFromSfen(detectPieceJson["sfen"], nextSpace);
+                                // if prevPiece and nextPiece is different, it is "nari"
+                              }
 
                               setState(() {
                                 _cameraOn = true;
                                 onProgress = false;
                                 currentMoveNumber += 1;
-                                currentKif = createKif(moveMap["prevSpace"]!, moveMap["nextSpace"]!, detectPieceJson["piece"], currentSfen);
-                                sfenMoveList.add(createSfenMove(moveMap["prevSpace"]!, moveMap["nextSpace"]!, detectPieceJson["piece"], currentSfen));
-                                currentPiecePlace = detectPlaceJson["sfen"];
-                                currentSfen = createSfenPhase(moveMap["prevSpace"]!, moveMap["nextSpace"]!, detectPieceJson["piece"], currentSfen);
+                                currentKif = createKif(prevSpace, nextSpace, piece, currentSfen);
+                                sfenMoveList.add(createSfenMove(prevSpace, nextSpace, piece, currentSfen));
+                                currentPiecePlace = piecePlace;
+                                currentSfen = createSfenPhase(prevSpace, nextSpace, piece, currentSfen);
                               });
 
                               // play sounds
-                              List<String> filenames = createAudioFilenameList(moveMap["prevSpace"]!, moveMap["nextSpace"]!, detectPieceJson["piece"], currentSfen);
+                              List<String> filenames = createAudioFilenameList(prevSpace, nextSpace, piece, currentSfen);
                               for (String filename in filenames) {
                                 _player.load("sounds/$filename.mp3");
                                 _player.play("sounds/$filename.mp3");

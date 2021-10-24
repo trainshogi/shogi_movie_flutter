@@ -74,6 +74,10 @@ String sfenPieceName2Filename(String pieceNameSfen) {
   return (pieceNameListSfen.indexOf(pieceNameSfen) + 10).toString();
 }
 
+String sfenPieceName2English(String pieceNameSfen) {
+  return pieceNameListEnglish[pieceNameListSfen.indexOf(pieceNameSfen)];
+}
+
 String sfenPieceName2Japanese(String pieceNameSfen) {
   return pieceNameListJapaneseOneChar[pieceNameListSfen.indexOf(pieceNameSfen)];
 }
@@ -106,6 +110,21 @@ String sfenList2Kif(List<String> sfenList) {
   return result;
 }
 
+String getPieceFromSfen(String sfen, int place) {
+  List<String> sfenPurged = sfenSpacePurge(sfen);
+  return sfenPieceName2English(sfenPurged[place].replaceFirst(" ", ""));
+}
+
+/// detect moved space.
+///   pattern1: move piece
+///   prevSpace > -1, nextSpace > -1
+///   next: only recognize nextSpace
+/// pattern2: put piece
+///   prevSpace == -1, nextSpace > -1
+///   next: only recognize nextSpace
+/// pattern3: take piece
+///   prevSpace > -1, nextSpace == -1
+///   next: search all pieces and get diff
 Map<String, int> getMovement(String prevPiecePlace, String nextPiecePlace) {
   var prevSpace = -1;
   var nextSpace = -1;

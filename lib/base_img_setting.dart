@@ -88,6 +88,7 @@ class _BaseImgSettingState extends State<BaseImgSetting> {
       alertDialog(context, "枠の角を4点設定してください");
     }
     else {
+      final imageXFile = await _controller!.takePicture();
       relativePoints = absolutePoints2relativePoints(
           _points, getPainterSize());
       String directoryPath = await FileController.directoryPath(
@@ -96,7 +97,7 @@ class _BaseImgSettingState extends State<BaseImgSetting> {
         "platform": platformPieceDetect,
         "methodName": 'initial_piece_detect',
         "args": <String, String>{
-          'srcPath': imageFile!.path,
+          'srcPath': imageXFile.path,
           'points': relativePoints.toString(),
           'dirName': directoryPath
         }
@@ -124,8 +125,11 @@ class _BaseImgSettingState extends State<BaseImgSetting> {
     _cameras = await availableCameras();
 
     if (_cameras!.isNotEmpty) {
-      _controller = CameraController(_cameras![0], ResolutionPreset.medium,
-        imageFormatGroup: ImageFormatGroup.yuv420);
+      _controller = CameraController(
+          _cameras![0],
+          ResolutionPreset.medium,
+        imageFormatGroup: ImageFormatGroup.yuv420
+      );
       _controller!.initialize().then((_) {
         if (!mounted) {
           return;
@@ -156,7 +160,7 @@ class _BaseImgSettingState extends State<BaseImgSetting> {
     return _cameraOn ? imageOrIcon()
         : ((imageFile != null) ?
         ImageAndPainter(maxPointLength: 4, points: _points, imageBytes: imageFile?.readAsBytesSync(),
-        imageWidget: Image.file(imageFile!), key: globalKeyForPainter)
+        imageWidget: imageOrIcon(), key: globalKeyForPainter)
         : const Icon(Icons.no_sim));
   }
 
@@ -237,8 +241,6 @@ class _BaseImgSettingState extends State<BaseImgSetting> {
                                 child: ElevatedButton(
                                   child: const Text('スタート'),
                                   onPressed: () {
-                                    relativePoints ??= absolutePoints2relativePoints(
-                                          _points, getPainterSize());
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(builder: (context) => Record(dirName: widget.dirName, relativePoints: relativePoints!)),

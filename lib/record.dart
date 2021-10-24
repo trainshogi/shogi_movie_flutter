@@ -7,11 +7,11 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:shogi_movie_flutter/camera.dart';
 import 'package:shogi_movie_flutter/result.dart';
 import 'package:shogi_movie_flutter/util.dart';
 import 'package:shogi_movie_flutter/util_sfen.dart';
+import 'package:wakelock/wakelock.dart';
 
 import 'file_controller.dart';
 import 'overlay_loading_molecules.dart';
@@ -49,10 +49,7 @@ class _RecordState extends State<Record> {
       return const Icon(Icons.no_sim);
     }
     else {
-      return
-        Container(
-          child: Camera(controller:_controller!)
-        );
+      return Camera(controller:_controller!);
     }
   }
 
@@ -61,7 +58,9 @@ class _RecordState extends State<Record> {
     _cameras = await availableCameras();
 
     if (_cameras!.isNotEmpty) {
-      _controller = CameraController(_cameras![0], ResolutionPreset.high);
+      _controller = CameraController(_cameras![0],
+          ResolutionPreset.medium,
+          imageFormatGroup: ImageFormatGroup.yuv420);
       _controller!.initialize().then((_) {
         if (!mounted) {
           return;
@@ -78,6 +77,7 @@ class _RecordState extends State<Record> {
   @override
   void initState() {
     super.initState();
+    Wakelock.enable();
     _player.load("sounds/initial.mp3");
     _player.play("sounds/initial.mp3");
     initCamera();
@@ -87,6 +87,7 @@ class _RecordState extends State<Record> {
   @override
   void dispose() {
     // Dispose of the controller when the widget is disposed.
+    Wakelock.disable();
     _controller?.dispose();
     super.dispose();
   }
@@ -109,7 +110,10 @@ class _RecordState extends State<Record> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(currentMoveNumber.toString() + '手目：' + currentKif),
-                  _cameraOn ? imageOrIcon() : image!,
+                  Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+                      child: _cameraOn ? imageOrIcon() : image!
+                  ),
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -140,6 +144,7 @@ class _RecordState extends State<Record> {
                                 }
                               };
                               var detectPlaceJson = jsonDecode(await callInvokeMethod(placeRequestMap) as String);
+                              print(detectPlaceJson.toString());
                               // detect movement
                               var moveMap = getMovement(currentPiecePlace, detectPlaceJson["sfen"]);
                               // detect piece
@@ -179,6 +184,7 @@ class _RecordState extends State<Record> {
                       ElevatedButton(
                         child: const Text('投了'),
                         onPressed: () {
+                          Wakelock.disable();
                           Navigator.push(
                             context,
                             MaterialPageRoute(builder: (context) => Result(

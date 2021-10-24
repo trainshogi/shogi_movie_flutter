@@ -67,6 +67,19 @@ class Util {
         return result
     }
 
+    fun resizeMatWithSameAspectRatio(mat: Mat, minLength: Double): Mat {
+        val resultMat = Mat()
+        if (mat.width() > mat.height()) {
+            val aspectRatio = mat.width() / mat.height()
+            Imgproc.resize(mat, resultMat, Size(minLength*aspectRatio, minLength))
+        }
+        else {
+            val aspectRatio = mat.height() / mat.width()
+            Imgproc.resize(mat, resultMat, Size(minLength, minLength*aspectRatio))
+        }
+        return resultMat
+    }
+
     fun binalizeColorMat(mat: Mat): Mat {
         val hsvMat = Mat()
         val colorMat = mutableListOf<Mat>()

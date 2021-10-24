@@ -24,6 +24,7 @@ import org.opencv.core.Mat
 
 import org.opencv.core.Scalar
 import kotlin.concurrent.thread
+import kotlin.math.max
 import kotlin.streams.toList
 
 
@@ -573,6 +574,9 @@ class MainActivity: FlutterActivity() {
         // crop image
         var croppedPieceMat = util.cropImageByMatOfPoint(pieceMat, pieceAbstractPoints)
         var croppedMaskMat = util.cropImageByMatOfPoint(maskMat, pieceAbstractPoints)
+        // resize image to deal easy
+        croppedPieceMat = util.resizeMatWithSameAspectRatio(croppedPieceMat, max(SPACE_WIDTH, SPACE_HEIGHT)*2.0)
+        croppedMaskMat = util.resizeMatWithSameAspectRatio(croppedMaskMat, max(SPACE_WIDTH, SPACE_HEIGHT)*2.0)
         // binalize
         Imgproc.cvtColor(croppedPieceMat, croppedPieceMat, Imgproc.COLOR_BGR2GRAY)
         // if piece name starts v, reverse image

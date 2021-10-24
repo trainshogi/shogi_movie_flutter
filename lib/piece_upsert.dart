@@ -3,9 +3,9 @@ import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:shogi_movie_flutter/frame_painter.dart';
 
 import 'file_controller.dart';
+import 'image_and_painter.dart';
 import 'util.dart';
 
 class PieceUpsert extends StatefulWidget {
@@ -20,8 +20,6 @@ class _PieceUpsertState extends State<PieceUpsert> {
 
   // variables
   File? imageFile;
-  Image? image;
-  Image? transImage;
   int movePointIndex = 0;
   int pieceNameIndex = 0;
   String pieceGroupName = ""; // initialize in initState
@@ -49,13 +47,7 @@ class _PieceUpsertState extends State<PieceUpsert> {
 
     if (savedFile.existsSync()) {
       setState(() {
-        // this.imageFile = imageFile;
         imageFile = savedFile; //変更
-        image = Image.memory(savedFile.readAsBytesSync());
-        transImage = Image.memory(
-            savedFile.readAsBytesSync(),
-            color: const Color.fromRGBO(255, 255, 255, 0)
-        );
       });
 
       // _points file
@@ -84,80 +76,7 @@ class _PieceUpsertState extends State<PieceUpsert> {
       setState(() {
         // this.imageFile = imageFile;
         this.imageFile = savedFile; //変更
-        image = Image.memory(savedFile.readAsBytesSync());
-        transImage = Image.memory(
-            savedFile.readAsBytesSync(),
-            color: const Color.fromRGBO(255, 255, 255, 0)
-        );
       });
-    }
-  }
-
-  // 点を追加
-  void _addPoint(TapUpDetails details) {
-    // setState()にリストを更新する関数を渡して状態を更新
-    setState(() {
-      _points.add(details.localPosition);
-    });
-  }
-
-  // singleTapに制御がいかないようにここは必要。
-  void _catchDoubleTap() {
-  }
-
-  void _deletePoint(TapDownDetails details) {
-    if (_points.isNotEmpty) {
-      int removePointIndex = getNearestPointIndex(_points, details.localPosition);
-      setState(() {
-        _points.removeAt(removePointIndex);
-      });
-    }
-  }
-
-  void _setMovePointIndex(DragStartDetails details) {
-    if (_points.isNotEmpty) {
-      movePointIndex = getNearestPointIndex(_points, details.localPosition);
-      setState(() {
-        _points[movePointIndex] = details.localPosition;
-      });
-    }
-  }
-
-  void _movePoint(DragUpdateDetails details) {
-    if (_points.isNotEmpty) {
-      setState(() {
-        _points[movePointIndex] = details.localPosition;
-      });
-    }
-  }
-  
-  Widget imageAndPainter() {
-    if (imageFile == null) {
-      return const Icon(Icons.no_sim);
-    }
-    else {
-      return Stack(
-        key: globalKeyForPainter,
-        children: [
-          image!,
-          GestureDetector(
-            // 追加イベント
-            onTapUp: _addPoint,
-            // 削除イベント
-            onDoubleTap: _catchDoubleTap,
-            onDoubleTapDown: _deletePoint,
-            // 移動イベント
-            onPanStart: _setMovePointIndex,
-            onPanUpdate: _movePoint,
-            // カスタムペイント
-            child: CustomPaint(
-              painter: FramePainter(_points),
-              // タッチを有効にするため、childが必要
-              child: transImage,
-            ),
-          ),
-        ],
-      );
     }
   }
 
@@ -176,8 +95,6 @@ class _PieceUpsertState extends State<PieceUpsert> {
       setState(() {
         // initialize
         imageFile = null;
-        image = null;
-        transImage = null;
         _points.clear();
         // set index
         pieceNameIndex -= 1;
@@ -202,8 +119,6 @@ class _PieceUpsertState extends State<PieceUpsert> {
       setState(() {
         // initialize
         imageFile = null;
-        image = null;
-        transImage = null;
         _points.clear();
         // set index
         pieceNameIndex += 1;
@@ -250,7 +165,9 @@ class _PieceUpsertState extends State<PieceUpsert> {
               ),
               Padding(
                 padding: const EdgeInsets.all(10),
-                child: imageAndPainter(),
+                child: ImageAndPainter(maxPointLength: -1, points: _points,
+                    imageBytes: imageFile?.readAsBytesSync(),
+                    key: globalKeyForPainter),
               ),
               Container(
                 padding: const EdgeInsets.all(10.0),

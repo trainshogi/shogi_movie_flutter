@@ -8,6 +8,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:shogi_movie_flutter/camera.dart';
 import 'package:shogi_movie_flutter/result.dart';
 import 'package:shogi_movie_flutter/util.dart';
 import 'package:shogi_movie_flutter/util_sfen.dart';
@@ -37,20 +38,20 @@ class _RecordState extends State<Record> {
   List<CameraDescription>? _cameras;
   CameraController? _controller;
   String directoryPath = "";
-  bool pending = false;
+  bool _cameraOn = false;
 
   static const platformPieceDetect = MethodChannel('com.nkkuma.dev/piece_detect');
 
   Widget imageOrIcon() {
-    if (_controller == null || pending == true) {
+    if (_controller == null || _cameraOn == false) {
       return const Icon(Icons.no_sim);
     }
     else {
       return
         Container(
           padding: const EdgeInsets.fromLTRB(50.0, 0.0, 50.0, 0.0),
-          // child: CameraPreview(_controller!)
-          child: const Icon(Icons.no_sim)
+          child: Camera(controller:_controller!)
+          // child: const Icon(Icons.no_sim)
         );
     }
   }
@@ -67,24 +68,26 @@ class _RecordState extends State<Record> {
         }
 
         //カメラ接続時にbuildするようsetStateを呼び出し
-        setState(() {});
+        setState(() {
+          _cameraOn = true;
+        });
       });
     }
   }
 
   @override
-  void initState(){
+  void initState() {
     super.initState();
     _player.load("sounds/initial.mp3");
     _player.play("sounds/initial.mp3");
-    // initCamera();
+    initCamera();
     currentSfen = initial_sfen;
   }
 
   @override
   void dispose() {
     // Dispose of the controller when the widget is disposed.
-    // _controller!.dispose();
+    _controller!.dispose();
     super.dispose();
   }
 
@@ -103,7 +106,7 @@ class _RecordState extends State<Record> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(currentMoveNumber.toString() + '手目：' + currentKif),
-                  imageOrIcon(),
+                  _cameraOn ? imageOrIcon() : image!,
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -113,12 +116,12 @@ class _RecordState extends State<Record> {
                         onPressed: () {
                           // set waiting loop
                           // take picture
-                          setState(() {
-                            pending = true;
-                          });
-                          // imageFilePath = (await _controller!.takePicture()).path;
-                          ImagePicker().pickImage(source: ImageSource.gallery).then((value) {
-                            imageFilePath = value?.path;
+                          _controller!.takePicture().then((value) {
+                          // ImagePicker().pickImage(source: ImageSource.gallery).then((value) {
+                            imageFilePath = value.path;
+                            setState(() {
+                              _cameraOn = false;
+                            });
                             // recognize image
                             FileController.directoryPath(widget.dirName).then((value) async {
                               directoryPath = value;
@@ -149,7 +152,7 @@ class _RecordState extends State<Record> {
                               var detectPieceJson = jsonDecode(await callInvokeMethod(pieceRequestMap) as String);
 
                               setState(() {
-                                pending = false;
+                                _cameraOn = true;
                                 currentMoveNumber += 1;
                                 currentKif = createKif(moveMap["prevSpace"]!, moveMap["nextSpace"]!, detectPieceJson["piece"], currentSfen);
                                 sfenMoveList.add(createSfenMove(moveMap["prevSpace"]!, moveMap["nextSpace"]!, detectPieceJson["piece"], currentSfen));

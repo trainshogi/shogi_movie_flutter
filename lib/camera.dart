@@ -11,7 +11,7 @@ class Camera extends StatefulWidget {
 
 class _CameraState extends State<Camera> {
   @override
-  Future<void> initState() async {
+  void initState() {
     super.initState();
     widget.controller.initialize().then((_) {
       if (!mounted) {
@@ -28,7 +28,7 @@ class _CameraState extends State<Camera> {
     }
 
     return AspectRatio(
-      aspectRatio: widget.controller.value.aspectRatio,
+      aspectRatio: 1/widget.controller.value.aspectRatio,
       child: CameraPreview(widget.controller),
     );
   }

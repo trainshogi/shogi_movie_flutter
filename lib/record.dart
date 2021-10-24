@@ -14,6 +14,7 @@ import 'package:shogi_movie_flutter/util.dart';
 import 'package:shogi_movie_flutter/util_sfen.dart';
 
 import 'file_controller.dart';
+import 'overlay_loading_molecules.dart';
 
 class Record extends StatefulWidget {
   final String dirName;
@@ -39,6 +40,7 @@ class _RecordState extends State<Record> {
   CameraController? _controller;
   String directoryPath = "";
   bool _cameraOn = false;
+  bool onProgress = false;
 
   static const platformPieceDetect = MethodChannel('com.nkkuma.dev/piece_detect');
 
@@ -49,9 +51,7 @@ class _RecordState extends State<Record> {
     else {
       return
         Container(
-          padding: const EdgeInsets.fromLTRB(50.0, 0.0, 50.0, 0.0),
           child: Camera(controller:_controller!)
-          // child: const Icon(Icons.no_sim)
         );
     }
   }
@@ -87,7 +87,7 @@ class _RecordState extends State<Record> {
   @override
   void dispose() {
     // Dispose of the controller when the widget is disposed.
-    _controller!.dispose();
+    _controller?.dispose();
     super.dispose();
   }
 
@@ -98,8 +98,11 @@ class _RecordState extends State<Record> {
         appBar: AppBar(
           title: const Text('棋譜記録'),
         ),
-        body: Center(
-            child: Container(
+        body: Stack(
+          clipBehavior: Clip.hardEdge,
+          fit: StackFit.expand,
+          children: <Widget>[
+            Center(child: Container(
               alignment: Alignment.center,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
@@ -121,6 +124,7 @@ class _RecordState extends State<Record> {
                             imageFilePath = value.path;
                             setState(() {
                               _cameraOn = false;
+                              onProgress = true;
                             });
                             // recognize image
                             FileController.directoryPath(widget.dirName).then((value) async {
@@ -153,6 +157,7 @@ class _RecordState extends State<Record> {
 
                               setState(() {
                                 _cameraOn = true;
+                                onProgress = false;
                                 currentMoveNumber += 1;
                                 currentKif = createKif(moveMap["prevSpace"]!, moveMap["nextSpace"]!, detectPieceJson["piece"], currentSfen);
                                 sfenMoveList.add(createSfenMove(moveMap["prevSpace"]!, moveMap["nextSpace"]!, detectPieceJson["piece"], currentSfen));
@@ -188,7 +193,9 @@ class _RecordState extends State<Record> {
                   ),
                 ],
               ),
-            )
+            )),
+            OverlayLoadingMolecules(visible: onProgress)
+          ]
         )
     );
   }

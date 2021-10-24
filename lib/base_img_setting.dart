@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:camera/camera.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -10,6 +11,7 @@ import 'package:shogi_movie_flutter/image_and_painter.dart';
 import 'package:shogi_movie_flutter/record.dart';
 import 'package:wakelock/wakelock.dart';
 
+import 'camera.dart';
 import 'file_controller.dart';
 import 'util.dart';
 import 'util_sfen.dart';
@@ -30,6 +32,10 @@ class _BaseImgSettingState extends State<BaseImgSetting> {
   bool onProgress = false;
   bool _cameraOn = true;
 
+  //カメラリスト
+  List<CameraDescription>? _cameras;
+  CameraController? _controller;
+
   // タッチした点を覚えておく
   final _points = <Offset>[];
   List<Offset>? relativePoints;
@@ -48,6 +54,26 @@ class _BaseImgSettingState extends State<BaseImgSetting> {
     setState(() {
       this.imageFile = savedFile; //変更
     });
+  }
+
+  void _getAndSaveImageFromCamera() async {
+    // Ensure that the camera is initialized.
+    // await _initializeControllerFuture;
+
+    // Attempt to take a picture and then get the location
+    // where the image file is saved.
+    try {
+      final imageXFile = await _controller!.takePicture();
+
+      var savedFile = await FileController.saveLocalImage(imageXFile, 'tmp', 'base.jpg'); //追加
+
+      setState(() {
+        imageFile = savedFile; //変更
+      });
+
+    } catch (e) {
+      print(e);
+    }
   }
 
   static const platformPieceDetect = MethodChannel('com.nkkuma.dev/piece_detect');
@@ -93,9 +119,57 @@ class _BaseImgSettingState extends State<BaseImgSetting> {
     }
   }
 
+  // prepare camera
+  void initCamera() async {
+    _cameras = await availableCameras();
+
+    if (_cameras!.isNotEmpty) {
+      _controller = CameraController(_cameras![0], ResolutionPreset.medium,
+        imageFormatGroup: ImageFormatGroup.yuv420);
+      _controller!.initialize().then((_) {
+        if (!mounted) {
+          return;
+        }
+
+        //カメラ接続時にbuildするようsetStateを呼び出し
+        setState(() {
+          _cameraOn = true;
+          // _getAndSaveImageFromCamera();
+        });
+      });
+    }
+  }
+
+  Widget imageOrIcon() {
+    if (_controller == null) {
+      return const Icon(Icons.no_sim);
+    }
+    else {
+      return
+        Container(
+            child: Camera(controller:_controller!)
+        );
+    }
+  }
+
+  Widget CameraOrImageOrIcon() {
+    return _cameraOn ? imageOrIcon()
+        : ((imageFile != null) ?
+        ImageAndPainter(maxPointLength: 4, points: _points, imageBytes: imageFile?.readAsBytesSync(),
+        imageWidget: Image.file(imageFile!), key: globalKeyForPainter)
+        : const Icon(Icons.no_sim));
+  }
+
   @override
   void initState() {
     super.initState();
+    initCamera();
+  }
+
+  @override
+  void dispose(){
+    _controller?.dispose();
+    super.dispose();
   }
 
   @override
@@ -116,12 +190,8 @@ class _BaseImgSettingState extends State<BaseImgSetting> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Padding(
-                        padding: const EdgeInsets.all(10),
-                        child: ImageAndPainter(
-                            maxPointLength: 4, points: _points,
-                            imageBytes: imageFile?.readAsBytesSync(),
-                            imageWidget: (imageFile == null) ? null : Image.memory(imageFile!.readAsBytesSync()),
-                            key: globalKeyForPainter),
+                        padding: const EdgeInsets.all(20),
+                        child: CameraOrImageOrIcon()
                       ),
                       Row(
                           crossAxisAlignment: CrossAxisAlignment.center,
@@ -133,7 +203,15 @@ class _BaseImgSettingState extends State<BaseImgSetting> {
                                   child: const Text('カメラで撮影'),
                                   onPressed: () {
                                     // _getAndSaveImageFromDevice(ImageSource.camera);
-                                    _getAndSaveImageFromDevice(ImageSource.gallery);
+                                    // _getAndSaveImageFromDevice(ImageSource.gallery);
+                                    setState(() {
+                                      onProgress = true;
+                                    });
+                                    _getAndSaveImageFromCamera();
+                                    setState(() {
+                                      _cameraOn = false;
+                                      onProgress = false;
+                                    });
                                   },
                                 )),
                             Container(

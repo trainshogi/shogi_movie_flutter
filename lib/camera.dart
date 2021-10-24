@@ -35,7 +35,7 @@ class _CameraState extends State<Camera> {
 
   @override
   void dispose() {
-    widget.controller.dispose();
+    // widget.controller.dispose();
     super.dispose();
   }
 }

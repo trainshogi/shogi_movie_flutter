@@ -59,7 +59,7 @@ class _RecordState extends State<Record> {
 
     if (_cameras!.isNotEmpty) {
       _controller = CameraController(_cameras![0],
-          ResolutionPreset.medium,
+          ResolutionPreset.high,
           imageFormatGroup: ImageFormatGroup.yuv420);
       _controller!.initialize().then((_) {
         if (!mounted) {

@@ -59,13 +59,6 @@ String sfenPurge2SfenString(List<String> sfenPurge) {
       }
       sfen += str.replaceFirst(" ", "");
     }
-    if (i != 0 && i%9 == 0) {
-      if (spaceNum != 0) {
-        sfen += spaceNum.toString();
-        spaceNum = 0;
-      }
-      sfen += "/";
-    }
   });
   return sfen;
 }
@@ -75,6 +68,7 @@ String sfenPieceName2Filename(String pieceNameSfen) {
 }
 
 String sfenPieceName2English(String pieceNameSfen) {
+  print("pieceNameSfen: " + pieceNameSfen);
   return pieceNameListEnglish[pieceNameListSfen.indexOf(pieceNameSfen)];
 }
 

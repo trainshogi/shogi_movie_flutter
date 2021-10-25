@@ -277,6 +277,6 @@ String createSfenPhase(int prevSpace, int nextSpace, String pieceNameEnglish, St
 
 List<String> createAudioFilenameList(int prevSpace, int nextSpace, String pieceNameEnglish, String prevSfen) {
   List<String> place = intSpace2KifString(nextSpace).split("");
-  String piece = (pieceNameListEnglish.indexOf(pieceNameEnglish) + 10).toString();
+  String piece = (pieceNameListEnglish.indexOf(pieceNameEnglish.replaceFirst("v", "")) + 10).toString();
   return [place[0], place[1], piece];
 }

@@ -265,7 +265,7 @@ String createSfenMove(int prevSpace, int nextSpace, String pieceNameEnglish, Str
 String createSfenPhase(int prevSpace, int nextSpace, String pieceNameEnglish, String prevSfen) {
   List<String> sfenPurgeList = sfenSpacePurge(prevSfen);
   sfenPurgeList[prevSpace] = " 1";
-  sfenPurgeList[nextSpace] = pieceNameListSfen[pieceNameEnglish.indexOf(pieceNameEnglish)];
+  sfenPurgeList[nextSpace] = pieceNameListSfen[pieceNameListEnglish.indexOf(pieceNameEnglish)];
   return sfenPurge2SfenString(sfenPurgeList);
 }
 

@@ -29,7 +29,6 @@ import kotlin.streams.toList
 
 
 class MainActivity: FlutterActivity() {
-    private val CHANNEL = "samples.flutter.dev/battery"
 
     private val CHANNEL_PieceDetect = "com.nkkuma.dev/piece_detect"
 
@@ -125,13 +124,15 @@ class MainActivity: FlutterActivity() {
                 val dirName = call.argument<String>("dirName").toString()
                 val points = call.argument<String>("points").toString()
                 val space = call.argument<String>("space").toString()
+                val pieceNames = call.argument<String>("pieceNames").toString()
                 Log.d("OpenCV", srcPath)
                 Log.d("OpenCV", dirName)
                 Log.d("OpenCV", points)
                 Log.d("OpenCV", space)
+                Log.d("OpenCV", pieceNames)
 
                 thread {
-                    val rootObjectString = one_piece_detect(srcPath, dirName, points, space)
+                    val rootObjectString = one_piece_detect(srcPath, dirName, points, space, pieceNames)
                     runOnUiThread {
                         result.success(rootObjectString)
                     }
@@ -176,7 +177,7 @@ class MainActivity: FlutterActivity() {
     }
 
     @RequiresApi(VERSION_CODES.N)
-    private fun one_piece_detect(srcPath: String, dirName: String, points: String, space: String): String {
+    private fun one_piece_detect(srcPath: String, dirName: String, points: String, space: String, pieceNames: String): String {
         // load opencv
         if (!OpenCVLoader.initDebug())
             Log.e("OpenCV", "Unable to load OpenCV!")
@@ -186,11 +187,12 @@ class MainActivity: FlutterActivity() {
         // example: perspective covert
         val relativePoints = util.offsetString2FloatList(points)
         val spaceList = space.split(',').map { it.toInt() }
+        val pieceNameList = if (pieceNames.isEmpty()) listOf() else pieceNames.split(',')
         Log.d("OpenCV", relativePoints.toString())
         val targetPlaceMat = spaceCroppedMat(srcPath, relativePoints, spaceList)
         val resultJson = detectPiece(
             dirName = dirName,
-            pieceNameList = listOf(),
+            pieceNameList = pieceNameList,
             piecesSize = listOf(),
             targetPlaceMat = targetPlaceMat
 //                    piecesSize = listOf(37, 42, 43, 47, 47, 48, 50, 50, 50, 37, 42, 43, 47, 47, 48, 50, 50, 50)

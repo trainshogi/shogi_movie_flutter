@@ -154,10 +154,13 @@ class _RecordState extends State<Record> {
                               int prevSpace = moveMap["prevSpace"]!;
                               int nextSpace = moveMap["nextSpace"]!;
                               String prevPiece = (prevSpace != -1) ? getPieceFromSfen(currentSfen, prevSpace) : "";
+                              String nextPiece;
                               String piece;
                               if (prevSpace > -1 && nextSpace > -1) {
                                 // if user moves piece, just detect nextSpace's piece
                                 piece = prevPiece;
+                                String promotePiece = promoteEnglishPieceName(prevPiece);
+                                String pieceNames = (promotePiece.isEmpty) ? prevPiece : prevPiece + "," + promotePiece;
                                 Map<String, dynamic> pieceRequestMap = {
                                   "platform": platformPieceDetect,
                                   "methodName": "one_piece_detect",
@@ -165,15 +168,20 @@ class _RecordState extends State<Record> {
                                     'srcPath': imageFilePath!,
                                     'dirName': directoryPath,
                                     'points': widget.relativePoints.toString(),
-                                    'space': (moveMap["nextSpace"]!%10).toString() + "," + (moveMap["nextSpace"]!/10).floor().toString()
+                                    'space': (moveMap["nextSpace"]!%10).toString() + "," + (moveMap["nextSpace"]!/10).floor().toString(),
+                                    'pieceNames': pieceNames
                                   }
                                 };
                                 var detectPieceJson = jsonDecode(await callInvokeMethod(pieceRequestMap) as String);
-                                String nextPiece = detectPieceJson["piece"];
+                                nextPiece = detectPieceJson["piece"];
                                 // if prevPiece and nextPiece is different, it is "nari"
+
                               }
                               else if (prevSpace > -1) {
                                 // if user put piece, just detect nextSpace's piece
+                                String pieceNames = (currentMoveNumber%2 == 0)
+                                    ? nonPromotedFirstMoveEnglishPieceNameList.join(",")
+                                    : nonPromotedSecondMoveEnglishPieceNameList.join(",");
                                 Map<String, dynamic> pieceRequestMap = {
                                   "platform": platformPieceDetect,
                                   "methodName": "one_piece_detect",
@@ -181,11 +189,13 @@ class _RecordState extends State<Record> {
                                     'srcPath': imageFilePath!,
                                     'dirName': directoryPath,
                                     'points': widget.relativePoints.toString(),
-                                    'space': (moveMap["nextSpace"]!%10).toString() + "," + (moveMap["nextSpace"]!/10).floor().toString()
+                                    'space': (moveMap["nextSpace"]!%10).toString() + "," + (moveMap["nextSpace"]!/10).floor().toString(),
+                                    'pieceNames': pieceNames
                                   }
                                 };
                                 var detectPieceJson = jsonDecode(await callInvokeMethod(pieceRequestMap) as String);
                                 piece = detectPieceJson["piece"];
+                                nextPiece = detectPieceJson["piece"];
                               }
                               else {
                                 // if user take piece, search all pieces and get diff
@@ -203,7 +213,7 @@ class _RecordState extends State<Record> {
                                 var moveMap = getMovement(currentSfen, detectPieceJson["sfen"]);
                                 prevSpace = moveMap["prevSpace"]!;
                                 nextSpace = moveMap["nextSpace"]!;
-                                String nextPiece = getPieceFromSfen(detectPieceJson["sfen"], nextSpace);
+                                nextPiece = getPieceFromSfen(detectPieceJson["sfen"], nextSpace);
                                 // if prevPiece and nextPiece is different, it is "nari"
                               }
 

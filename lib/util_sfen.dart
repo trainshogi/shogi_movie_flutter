@@ -1,3 +1,5 @@
+import 'dart:math';
+
 String initial_sfen = "lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL";
 
 List<String> pieceNameListJapanese = [
@@ -25,6 +27,10 @@ List<String> pieceNameListSfen = [
   "p", "l", "n", "s", "g", "b", "r", "k", "k",
   "+p", "+l", "+n", "+s", "+b", "+r"
 ];
+List<String> nonPromotedFirstMoveEnglishPieceNameList = [
+  "fu", "kyo", "kei", "gin", "kin", "kaku", "hisya", "ou", "gyoku"];
+List<String> nonPromotedSecondMoveEnglishPieceNameList = [
+  "vfu", "vkyo", "vkei", "vgin", "vkin", "vkaku", "vhisya", "vou", "vgyoku"];
 
 bool isInitialPosition(String sfen){
   return sfen == initial_sfen;
@@ -74,6 +80,18 @@ String sfenPieceName2English(String pieceNameSfen) {
 
 String sfenPieceName2Japanese(String pieceNameSfen) {
   return pieceNameListJapaneseOneChar[pieceNameListSfen.indexOf(pieceNameSfen)];
+}
+
+String promoteEnglishPieceName(String pieceNameEnglish) {
+  if (pieceNameEnglish.startsWith("n") || pieceNameEnglish.startsWith("vn")
+      || pieceNameEnglish.endsWith("kin") || pieceNameEnglish.endsWith("ou")
+      || pieceNameEnglish.endsWith("gyoku")) {
+    return "";
+  } else if (pieceNameEnglish.startsWith("v")){
+    return pieceNameEnglish.replaceFirst("v", "vn");
+  } else {
+    return "n" + pieceNameEnglish;
+  }
 }
 
 List<String> sfenList2AudioFilename(List<String> sfenList) {

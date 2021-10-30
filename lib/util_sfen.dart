@@ -287,8 +287,9 @@ String createSfenPhase(int prevSpace, int nextSpace, String pieceNameEnglish, St
   return sfenPurge2SfenString(sfenPurgeList);
 }
 
-List<String> createAudioFilenameList(int prevSpace, int nextSpace, String pieceNameEnglish, String prevSfen) {
-  List<String> place = intSpace2KifString(nextSpace).split("");
-  String piece = (pieceNameListEnglish.indexOf(pieceNameEnglish.replaceFirst("v", "")) + 10).toString();
-  return [place[0], place[1], piece];
+List<String> createAudioFilenameList(int prevSpace, int nextSpace, String pieceNameEnglish, String prevSfen, String movePattern) {
+  List<String> filenameList = intSpace2KifString(nextSpace).split("");
+  filenameList.add((pieceNameListEnglish.indexOf(pieceNameEnglish.replaceFirst("v", "")) + 10).toString());
+  if (movePattern == "put") {filenameList.add("32");}
+  return filenameList;
 }

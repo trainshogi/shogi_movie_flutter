@@ -81,6 +81,28 @@ void successDialog(BuildContext context, String alert_sentence) {
   );
 }
 
+void normalDialog(BuildContext context, String title, String alertSentence, Future<void> Function() onPressedFunction) {
+  showDialog(
+    context: context,
+    builder: (_) {
+      return AlertDialog(
+        title: Text(title),
+        content: Text(alertSentence),
+        actions: <Widget>[
+          // ボタン領域
+          TextButton(
+            child: const Text("OK"),
+            onPressed: () {
+              onPressedFunction();
+              Navigator.pop(context);
+            },
+          ),
+        ],
+      );
+    },
+  );
+}
+
 void textDialog(BuildContext context, String alert_sentence) {
   showDialog(
     context: context,

@@ -69,6 +69,8 @@ class _RecordState extends State<Record> {
           return;
         }
 
+        normalDialog(context, "確認", "記録開始します", () => _controller!.startImageStream((CameraImage image) => _processCameraImage(image)));
+
         //カメラ接続時にbuildするようsetStateを呼び出し
         setState(() {});
       });
@@ -178,8 +180,10 @@ class _RecordState extends State<Record> {
                               String prevPiece = (prevSpace != -1) ? getPieceFromSfen(currentSfen, prevSpace) : "";
                               String nextPiece;
                               String piece;
+                              String movePattern = "";
                               if (prevSpace > -1 && nextSpace > -1) {
                                 // if user moves piece, just detect nextSpace's piece
+                                movePattern = "move";
                                 piece = prevPiece;
                                 String promotePiece = promoteEnglishPieceName(prevPiece);
                                 String pieceNames = (promotePiece.isEmpty) ? prevPiece : prevPiece + "," + promotePiece;
@@ -199,8 +203,9 @@ class _RecordState extends State<Record> {
                                 // if prevPiece and nextPiece is different, it is "nari"
 
                               }
-                              else if (prevSpace > -1) {
+                              else if (nextSpace > -1) {
                                 // if user put piece, just detect nextSpace's piece
+                                movePattern = "put";
                                 String pieceNames = (currentMoveNumber%2 == 0)
                                     ? nonPromotedFirstMoveEnglishPieceNameList.join(",")
                                     : nonPromotedSecondMoveEnglishPieceNameList.join(",");
@@ -221,19 +226,25 @@ class _RecordState extends State<Record> {
                               }
                               else {
                                 // if user take piece, search all pieces and get diff
+                                movePattern = "take";
                                 piece = prevPiece;
+                                String promotePiece = promoteEnglishPieceName(prevPiece);
+                                String pieceNames = (promotePiece.isEmpty) ? prevPiece : prevPiece + "," + promotePiece;
+                                String tookedSfen = currentSfen;
                                 Map<String, dynamic> pieceRequestMap = {
                                   "platform": platformPieceDetect,
-                                  "methodName": "initial_piece_detect",
+                                  "methodName": "all_piece_detect",
                                   "args": {
                                     'srcPath': imageFilePath!,
                                     'dirName': directoryPath,
-                                    'points': widget.relativePoints.toString()
+                                    'points': widget.relativePoints.toString(),
+                                    'sfen': tookedSfen,
+                                    'pieceNames': pieceNames
                                   }
                                 };
                                 var detectPieceJson = jsonDecode(await callInvokeMethod(pieceRequestMap) as String);
                                 var moveMap = getMovement(currentSfen, detectPieceJson["sfen"]);
-                                prevSpace = moveMap["prevSpace"]!;
+                                // prevSpace = moveMap["prevSpace"]!;
                                 nextSpace = moveMap["nextSpace"]!;
                                 nextPiece = getPieceFromSfen(detectPieceJson["sfen"], nextSpace);
                                 // if prevPiece and nextPiece is different, it is "nari"
@@ -250,7 +261,7 @@ class _RecordState extends State<Record> {
                               });
 
                               // play sounds
-                              List<String> filenames = createAudioFilenameList(prevSpace, nextSpace, piece, currentSfen);
+                              List<String> filenames = createAudioFilenameList(prevSpace, nextSpace, piece, currentSfen, movePattern);
                               for (String filename in filenames) {
                                 _player.load("sounds/$filename.mp3");
                                 _player.play("sounds/$filename.mp3");

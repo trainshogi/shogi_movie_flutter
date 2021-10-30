@@ -26,6 +26,7 @@ class Record extends StatefulWidget {
 }
 
 class _RecordState extends State<Record> {
+  FileController fileController = FileController();
   String? imageFilePath;
   File? imageFile;
   Image? image;
@@ -40,7 +41,9 @@ class _RecordState extends State<Record> {
   CameraController? _controller;
   String directoryPath = "";
   bool _cameraOn = false;
+  bool _cameraStreamOn = false;
   bool onProgress = false;
+  late CameraImage _savedImage;
 
   static const platformPieceDetect = MethodChannel('com.nkkuma.dev/piece_detect');
 
@@ -67,20 +70,33 @@ class _RecordState extends State<Record> {
         }
 
         //カメラ接続時にbuildするようsetStateを呼び出し
-        setState(() {
-          _cameraOn = true;
-        });
+        setState(() {});
       });
     }
+  }
+
+  void _processCameraImage(CameraImage image) {
+    if (_cameraStreamOn == false) {
+      fileController.getImgFile(image)
+          .then((value) => setState(() {imageFile = value;}));
+    }
+    setState(() {
+      _savedImage = image;
+      _cameraStreamOn = true;
+    });
+  }
+
+  Widget cameraImageOrIcon() {
+    return (_controller != null) ? Camera(controller:_controller!) : const Icon(Icons.no_sim);
   }
 
   @override
   void initState() {
     super.initState();
+    initCamera();
     Wakelock.enable();
     _player.load("sounds/initial.mp3");
     _player.play("sounds/initial.mp3");
-    initCamera();
     currentSfen = initial_sfen;
   }
 
@@ -112,7 +128,7 @@ class _RecordState extends State<Record> {
                   Text(currentMoveNumber.toString() + '手目：' + currentKif),
                   Padding(
                       padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
-                      child: _cameraOn ? imageOrIcon() : image!
+                      child: cameraImageOrIcon()
                   ),
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
@@ -122,8 +138,14 @@ class _RecordState extends State<Record> {
                         child: const Text('撮影'),
                         onPressed: () {
                           // set waiting loop
+                          if (_cameraStreamOn == false) {
+                            _controller!.startImageStream((CameraImage image) => _processCameraImage(image));
+                            return;
+                          }
+
                           // take picture
-                          _controller!.takePicture().then((value) {
+                          // _controller!.takePicture().then((value) {
+                          fileController.getImgFile(_savedImage).then((value) {
                           // ImagePicker().pickImage(source: ImageSource.gallery).then((value) {
                             imageFilePath = value.path;
                             setState(() {

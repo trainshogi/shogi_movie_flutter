@@ -49,15 +49,15 @@ class MainActivity: FlutterActivity() {
     )
 
     private val initialPiecePlacement = listOf(
-        listOf("vkyo", "vkei", "vgin", "vkin", "vou", "vkin", "vgin", "vkei", "vkyo"),
-        listOf("", "vhisya", "", "", "", "", "", "vkaku", ""),
-        listOf("vfu", "vfu", "vfu", "vfu", "vfu", "vfu", "vfu", "vfu", "vfu"),
-        listOf("", "", "", "", "", "", "", "", ""),
-        listOf("", "", "", "", "", "", "", "", ""),
-        listOf("", "", "", "", "", "", "", "", ""),
-        listOf("fu", "fu", "fu", "fu", "fu", "fu", "fu", "fu", "fu"),
-        listOf("", "kaku", "", "", "", "", "", "hisya", ""),
-        listOf("kyo", "kei", "gin", "kin", "gyoku", "kin", "gin", "kei", "kyo")
+        "vkyo", "vkei", "vgin", "vkin", "vou", "vkin", "vgin", "vkei", "vkyo", "",
+        "", "vhisya", "", "", "", "", "", "vkaku", "", "",
+        "vfu", "vfu", "vfu", "vfu", "vfu", "vfu", "vfu", "vfu", "vfu", "",
+        "", "", "", "", "", "", "", "", "", "",
+        "", "", "", "", "", "", "", "", "", "",
+        "", "", "", "", "", "", "", "", "", "",
+        "fu", "fu", "fu", "fu", "fu", "fu", "fu", "fu", "fu", "",
+        "", "kaku", "", "", "", "", "", "hisya", "", "",
+        "kyo", "kei", "gin", "kin", "gyoku", "kin", "gin", "kei", "kyo"
     )
 
     private val pieceSizeList = listOf(64, 62, 60, 58, 56, 54, 52, 50, 48, 46, 44, 42, 40, 38, 36)
@@ -219,8 +219,9 @@ class MainActivity: FlutterActivity() {
         val matCropped = file2crop9x9Mat(srcPath, relativePoints)
         placeSfen.toCharArray().forEachIndexed{ index, char ->
             if (char == 'Z') {
+                val pieceNameList = if (initialPiecePlacement[index] == "") listOf() else listOf(initialPiecePlacement[index])
                 val targetPlaceMat = spaceCroppedMat(matCropped, listOf(index%10, index/10))
-                val detectJsonObject = JSONObject(detectPiece(dirName, listOf(), listOf(), targetPlaceMat))
+                val detectJsonObject = JSONObject(detectPiece(dirName, pieceNameList, listOf(), targetPlaceMat))
                 val pieceNameIndex = pieceNameListEnglish.indexOf(detectJsonObject.getString("piece"))
                 if (pieceNameIndex != -1) {
                     sfen = util.replaceStr(sfen, index, pieceNameListSfen[pieceNameIndex])
@@ -545,7 +546,7 @@ class MainActivity: FlutterActivity() {
             // end loop of piece
         }.withIndex().toList().maxByOrNull { it.value }
 
-        val pieceName = if (result != null) pieceNameListEnglish[result.index] else ""
+        val pieceName = if (result != null) pieceNameListForPiece[result.index] else ""
         val pieceValue = result?.value ?: 0
 
         // create json

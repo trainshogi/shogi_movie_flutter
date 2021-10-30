@@ -1,9 +1,24 @@
 import 'dart:io';
+import 'dart:ffi';
+import 'dart:typed_data';
 
+import 'package:camera/camera.dart';
+import 'package:ffi/ffi.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:image/image.dart' as imglib;
+
+typedef convert_func = Pointer<Uint32> Function(Pointer<Uint8>, Pointer<Uint8>, Pointer<Uint8>, Int32, Int32, Int32, Int32);
+typedef Convert = Pointer<Uint32> Function(Pointer<Uint8>, Pointer<Uint8>, Pointer<Uint8>, int, int, int, int);
 
 class FileController {
+
+  // Load the convertImage() function from the library
+  Convert conv = (Platform.isAndroid
+      ? DynamicLibrary.open("libconvertImage.so")
+      : DynamicLibrary.process())
+      .lookup<NativeFunction<convert_func>>('convertImage').asFunction<Convert>();
+
   // ドキュメントのパスを取得
   static Future get localPath async {
     final directory = await getApplicationDocumentsDirectory();
@@ -44,6 +59,57 @@ class FileController {
     // でもOK
 
     return savedFile;
+  }
+
+  // 画像をドキュメントへ保存する。
+  // 引数にはカメラ撮影時にreturnされるFileオブジェクトを持たせる。
+  static Future saveLocalImageBytes(List<int> bytes, String dirName, String filename) async {
+    final path = await directoryPath(dirName);
+    final imagePath = '$path/$filename';
+    File imageFile = File(imagePath);
+    // カメラで撮影した画像は撮影時用の一時的フォルダパスに保存されるため、
+    // その画像をドキュメントへ保存し直す。
+    var savedFile = await imageFile.writeAsBytes(bytes);
+    // もしくは
+    // var savedFile = await image.copy(imagePath);
+    // でもOK
+
+    return savedFile;
+  }
+
+  Future<File> getImgFile(CameraImage _savedImage) async {
+    // Allocate memory for the 3 planes of the image
+    Pointer<Uint8> p = calloc(_savedImage.planes[0].bytes.length);
+    Pointer<Uint8> p1 = calloc(_savedImage.planes[1].bytes.length);
+    Pointer<Uint8> p2 = calloc(_savedImage.planes[2].bytes.length);
+
+    // Assign the planes data to the pointers of the image
+    Uint8List pointerList = p.asTypedList(_savedImage.planes[0].bytes.length);
+    Uint8List pointerList1 = p1.asTypedList(_savedImage.planes[1].bytes.length);
+    Uint8List pointerList2 = p2.asTypedList(_savedImage.planes[2].bytes.length);
+    pointerList.setRange(0, _savedImage.planes[0].bytes.length, _savedImage.planes[0].bytes);
+    pointerList1.setRange(0, _savedImage.planes[1].bytes.length, _savedImage.planes[1].bytes);
+    pointerList2.setRange(0, _savedImage.planes[2].bytes.length, _savedImage.planes[2].bytes);
+
+    // Call the convertImage function and convert the YUV to RGB
+    Pointer<Uint32> imgP = conv(p, p1, p2, _savedImage.planes[1].bytesPerRow,
+        _savedImage.planes[1].bytesPerPixel!, _savedImage.width, _savedImage.height);
+    // Get the pointer of the data returned from the function to a List
+    List<int> imgData = imgP.asTypedList((_savedImage.width * _savedImage.height));
+
+    // Generate image from the converted data
+    imglib.Image img = imglib.Image.fromBytes(_savedImage.height, _savedImage.width, imgData);
+
+    File file = await saveLocalImageBytes(imglib.encodeJpg(img), 'tmp', 'base.jpg');
+
+    // Free the memory space allocated
+    // from the planes and the converted data
+    calloc.free(p);
+    calloc.free(p1);
+    calloc.free(p2);
+    calloc.free(imgP);
+
+    return file;
   }
 
   // ドキュメントのファイルを取得する。

@@ -6,7 +6,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:shogi_movie_flutter/image_and_painter.dart';
 import 'package:shogi_movie_flutter/record.dart';
 import 'package:wakelock/wakelock.dart';
@@ -26,55 +25,21 @@ class BaseImgSetting extends StatefulWidget {
 }
 
 class _BaseImgSettingState extends State<BaseImgSetting> {
+  FileController fileController = FileController();
   File? imageFile;
   GlobalKey globalKeyForPainter = GlobalKey();
   String currentSfen = "";
   bool onProgress = false;
-  bool _cameraOn = true;
+  bool _cameraStreamOn = false;
 
   //カメラリスト
   List<CameraDescription>? _cameras;
   CameraController? _controller;
+  late CameraImage _savedImage;
 
   // タッチした点を覚えておく
   final _points = <Offset>[];
   List<Offset>? relativePoints;
-
-  void _getAndSaveImageFromDevice(ImageSource source) async {
-    // 撮影/選択したFileが返ってくる
-    final ImagePicker _picker = ImagePicker();
-    var imageFile = await _picker.pickImage(source: source);
-    // 撮影せずに閉じた場合はnullになる
-    if (imageFile == null) {
-      return;
-    }
-
-    var savedFile = await FileController.saveLocalImage(imageFile, 'tmp', 'base.jpg'); //追加
-
-    setState(() {
-      this.imageFile = savedFile; //変更
-    });
-  }
-
-  void _getAndSaveImageFromCamera() async {
-    // Ensure that the camera is initialized.
-    // await _initializeControllerFuture;
-
-    // Attempt to take a picture and then get the location
-    // where the image file is saved.
-    try {
-      final imageXFile = await _controller!.takePicture();
-
-      var savedFile = await FileController.saveLocalImage(imageXFile, 'tmp', 'base.jpg'); //追加
-
-      setState(() {
-        imageFile = savedFile; //変更
-      });
-
-    } catch (e) {
-      print(e);
-    }
-  }
 
   static const platformPieceDetect = MethodChannel('com.nkkuma.dev/piece_detect');
 
@@ -88,7 +53,8 @@ class _BaseImgSettingState extends State<BaseImgSetting> {
       alertDialog(context, "枠の角を4点設定してください");
     }
     else {
-      final imageXFile = await _controller!.takePicture();
+      // final imageXFile = await _controller!.takePicture();
+      var savedFile = await fileController.getImgFile(_savedImage);
       relativePoints = absolutePoints2relativePoints(
           _points, getPainterSize());
       String directoryPath = await FileController.directoryPath(
@@ -97,7 +63,7 @@ class _BaseImgSettingState extends State<BaseImgSetting> {
         "platform": platformPieceDetect,
         "methodName": 'initial_piece_detect',
         "args": <String, String>{
-          'srcPath': imageXFile.path,
+          'srcPath': savedFile.path, //imageXFile.path,
           'points': relativePoints.toString(),
           'dirName': directoryPath
         }
@@ -126,42 +92,41 @@ class _BaseImgSettingState extends State<BaseImgSetting> {
 
     if (_cameras!.isNotEmpty) {
       _controller = CameraController(
-          _cameras![0],
-          ResolutionPreset.high,
+        _cameras![0],
+        ResolutionPreset.high,
         imageFormatGroup: ImageFormatGroup.yuv420
       );
-      _controller!.initialize().then((_) {
+      _controller!.setFlashMode(FlashMode.always);
+      _controller!.initialize().then((_) async {
         if (!mounted) {
           return;
         }
 
+        _controller!.startImageStream((CameraImage image) => _processCameraImage(image));
+
         //カメラ接続時にbuildするようsetStateを呼び出し
-        setState(() {
-          _cameraOn = true;
-          // _getAndSaveImageFromCamera();
-        });
+        setState(() {});
       });
     }
   }
 
-  Widget imageOrIcon() {
-    if (_controller == null) {
-      return const Icon(Icons.no_sim);
+  void _processCameraImage(CameraImage image) {
+    if (_cameraStreamOn == false) {
+      fileController.getImgFile(image)
+          .then((value) => setState(() {imageFile = value;}));
     }
-    else {
-      return
-        Container(
-            child: Camera(controller:_controller!)
-        );
-    }
+    setState(() {
+      _savedImage = image;
+      _cameraStreamOn = true;
+    });
   }
 
-  Widget CameraOrImageOrIcon() {
-    return _cameraOn ? imageOrIcon()
-        : ((imageFile != null) ?
+  Widget cameraImageOrIcon() {
+    return
+      (imageFile != null && _controller != null) ?
         ImageAndPainter(maxPointLength: 4, points: _points, imageBytes: imageFile?.readAsBytesSync(),
-        imageWidget: imageOrIcon(), key: globalKeyForPainter)
-        : const Icon(Icons.no_sim));
+        imageWidget: Camera(controller:_controller!), key: globalKeyForPainter)
+        : const Icon(Icons.no_sim);
   }
 
   @override
@@ -195,29 +160,12 @@ class _BaseImgSettingState extends State<BaseImgSetting> {
                     children: [
                       Padding(
                         padding: const EdgeInsets.all(20),
-                        child: CameraOrImageOrIcon()
+                        child: cameraImageOrIcon()
                       ),
                       Row(
                           crossAxisAlignment: CrossAxisAlignment.center,
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Container(
-                                padding: const EdgeInsets.all(3.0),
-                                child: ElevatedButton(
-                                  child: const Text('カメラで撮影'),
-                                  onPressed: () {
-                                    // _getAndSaveImageFromDevice(ImageSource.camera);
-                                    // _getAndSaveImageFromDevice(ImageSource.gallery);
-                                    setState(() {
-                                      onProgress = true;
-                                    });
-                                    _getAndSaveImageFromCamera();
-                                    setState(() {
-                                      _cameraOn = false;
-                                      onProgress = false;
-                                    });
-                                  },
-                                )),
                             Container(
                                 padding: const EdgeInsets.all(3.0),
                                 child: ElevatedButton(

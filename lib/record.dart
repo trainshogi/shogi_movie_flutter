@@ -140,11 +140,6 @@ class _RecordState extends State<Record> {
                         child: const Text('撮影'),
                         onPressed: () {
                           // set waiting loop
-                          if (_cameraStreamOn == false) {
-                            _controller!.startImageStream((CameraImage image) => _processCameraImage(image));
-                            return;
-                          }
-
                           // take picture
                           // _controller!.takePicture().then((value) {
                           fileController.getImgFile(_savedImage).then((value) {
@@ -179,6 +174,7 @@ class _RecordState extends State<Record> {
                               int nextSpace = moveMap["nextSpace"]!;
                               String prevPiece = (prevSpace != -1) ? getPieceFromSfen(currentSfen, prevSpace) : "";
                               String nextPiece;
+                              bool nari = false;
                               String piece;
                               String movePattern = "";
                               if (prevSpace > -1 && nextSpace > -1) {
@@ -201,7 +197,7 @@ class _RecordState extends State<Record> {
                                 var detectPieceJson = jsonDecode(await callInvokeMethod(pieceRequestMap) as String);
                                 nextPiece = detectPieceJson["piece"];
                                 // if prevPiece and nextPiece is different, it is "nari"
-
+                                nari = (prevPiece != nextPiece) ? true : false;
                               }
                               else if (nextSpace > -1) {
                                 // if user put piece, just detect nextSpace's piece
@@ -230,7 +226,9 @@ class _RecordState extends State<Record> {
                                 piece = prevPiece;
                                 String promotePiece = promoteEnglishPieceName(prevPiece);
                                 String pieceNames = (promotePiece.isEmpty) ? prevPiece : prevPiece + "," + promotePiece;
-                                String tookedSfen = currentSfen;
+                                print(pieceNames);
+                                String piecePlaceListString = sfenPurge2EnglishList(sfenSpacePurge(currentSfen)).join(",");
+                                print(piecePlaceListString);
                                 Map<String, dynamic> pieceRequestMap = {
                                   "platform": platformPieceDetect,
                                   "methodName": "all_piece_detect",
@@ -238,30 +236,31 @@ class _RecordState extends State<Record> {
                                     'srcPath': imageFilePath!,
                                     'dirName': directoryPath,
                                     'points': widget.relativePoints.toString(),
-                                    'sfen': tookedSfen,
+                                    'piecePlaceListString': piecePlaceListString,
                                     'pieceNames': pieceNames
                                   }
                                 };
                                 var detectPieceJson = jsonDecode(await callInvokeMethod(pieceRequestMap) as String);
-                                var moveMap = getMovement(currentSfen, detectPieceJson["sfen"]);
+                                var moveMap = getMovementWithSfenPhase(currentSfen, detectPieceJson["sfen"]);
                                 // prevSpace = moveMap["prevSpace"]!;
                                 nextSpace = moveMap["nextSpace"]!;
                                 nextPiece = getPieceFromSfen(detectPieceJson["sfen"], nextSpace);
                                 // if prevPiece and nextPiece is different, it is "nari"
+                                nari = (prevPiece != nextPiece) ? true : false;
                               }
 
                               setState(() {
                                 _cameraOn = true;
                                 onProgress = false;
                                 currentMoveNumber += 1;
-                                currentKif = createKif(prevSpace, nextSpace, piece, currentSfen);
-                                sfenMoveList.add(createSfenMove(prevSpace, nextSpace, piece, currentSfen));
+                                currentKif = createKif(prevSpace, nextSpace, piece, currentSfen, nari);
+                                sfenMoveList.add(createSfenMove(prevSpace, nextSpace, piece, currentSfen, nari));
                                 currentPiecePlace = piecePlace;
-                                currentSfen = createSfenPhase(prevSpace, nextSpace, piece, currentSfen);
+                                currentSfen = createSfenPhase(prevSpace, nextSpace, nextPiece, currentSfen); // update to put nextPiece
                               });
 
                               // play sounds
-                              List<String> filenames = createAudioFilenameList(prevSpace, nextSpace, piece, currentSfen, movePattern);
+                              List<String> filenames = createAudioFilenameList(prevSpace, nextSpace, piece, currentSfen, movePattern, nari);
                               for (String filename in filenames) {
                                 _player.load("sounds/$filename.mp3");
                                 _player.play("sounds/$filename.mp3");

@@ -101,8 +101,7 @@ class MainActivity: FlutterActivity() {
                     piecesSize = listOf(37, 42, 43, 47, 47, 48, 50, 50, 50, 37, 42, 43, 47, 47, 48, 50, 50, 50)
                 )
                 result.success(resultJson)
-            }
-            else if (call.method == "piece_place_detect") {
+            } else if (call.method == "piece_place_detect") {
                 // get variable
                 val srcPath = call.argument<String>("srcPath").toString()
                 val dirName = call.argument<String>("dirName").toString()
@@ -117,8 +116,7 @@ class MainActivity: FlutterActivity() {
                         result.success(rootObjectString)
                     }
                 }
-            }
-            else if (call.method == "one_piece_detect") {
+            } else if (call.method == "one_piece_detect") {
                 // get variable
                 val srcPath = call.argument<String>("srcPath").toString()
                 val dirName = call.argument<String>("dirName").toString()
@@ -137,8 +135,7 @@ class MainActivity: FlutterActivity() {
                         result.success(rootObjectString)
                     }
                 }
-            }
-            else if (call.method == "initial_piece_detect") {
+            } else if (call.method == "initial_piece_detect") {
                 // get variable
                 val srcPath = call.argument<String>("srcPath").toString()
                 val dirName = call.argument<String>("dirName").toString()
@@ -149,6 +146,25 @@ class MainActivity: FlutterActivity() {
 
                 thread {
                     val rootObjectString = initial_piece_detect(srcPath, dirName, points)
+                    runOnUiThread {
+                        result.success(rootObjectString)
+                    }
+                }
+            } else if (call.method == "all_piece_detect") {
+                // get variable
+                val srcPath = call.argument<String>("srcPath").toString()
+                val dirName = call.argument<String>("dirName").toString()
+                val points = call.argument<String>("points").toString()
+                val piecePlaceListString = call.argument<String>("piecePlaceListString").toString()
+                val pieceNames = call.argument<String>("pieceNames").toString()
+                Log.d("OpenCV", srcPath)
+                Log.d("OpenCV", dirName)
+                Log.d("OpenCV", points)
+                Log.d("OpenCV", piecePlaceListString)
+                Log.d("OpenCV", pieceNames)
+
+                thread {
+                    val rootObjectString = all_piece_detect(srcPath, dirName, points, piecePlaceListString, pieceNames)
                     runOnUiThread {
                         result.success(rootObjectString)
                     }
@@ -239,6 +255,51 @@ class MainActivity: FlutterActivity() {
         val rootObject = JSONObject()
         rootObject.put("imgPath", imgPath)
         rootObject.put("sfen", util.sfenSpaceMerge(sfen))
+        Log.d("OpenCV", rootObject.toString())
+        return rootObject.toString()
+    }
+
+    @RequiresApi(VERSION_CODES.N)
+    private fun all_piece_detect(srcPath: String, dirName: String, points: String, piecePlaceListString: String, pieceNames: String): String {
+        // load opencv
+        if (!OpenCVLoader.initDebug())
+            Log.e("OpenCV", "Unable to load OpenCV!")
+        else
+            Log.d("OpenCV", "OpenCV loaded Successfully!")
+
+        val relativePoints = util.offsetString2FloatList(points)
+        val positionJson = JSONObject(getCurrentPosition(
+            srcpath = srcPath,
+            relativePoints = relativePoints
+        ))
+
+        val sfenList: MutableList<String> = "111111111/111111111/111111111/111111111/111111111/111111111/111111111/111111111/111111111".split("").toMutableList();
+        Log.d("OpenCV", sfenList.joinToString(""))
+        val placeSfen: String = positionJson.get("sfen") as String
+        val matCropped = file2crop9x9Mat(srcPath, relativePoints)
+        val piecePlaceList = piecePlaceListString.split(",")
+        val pieceNamesList = pieceNames.split(",")
+        placeSfen.toCharArray().forEachIndexed{ index, char ->
+            if (char == 'Z') {
+                if (piecePlaceList[index] != "" && piecePlaceList[index].startsWith("v") == pieceNames.startsWith("v")) {
+                    sfenList[index+1] = pieceNameListSfen[pieceNameListEnglish.indexOf(piecePlaceList[index])]
+                }
+                else {
+                    val pieceNameList = if (piecePlaceList[index] == "") listOf() else listOf(piecePlaceList[index]) + pieceNamesList
+                    val targetPlaceMat = spaceCroppedMat(matCropped, listOf(index%10, index/10))
+                    val detectJsonObject = JSONObject(detectPiece(dirName, pieceNameList, listOf(), targetPlaceMat))
+                    val pieceNameIndex = pieceNameListEnglish.indexOf(detectJsonObject.getString("piece"))
+                    if (pieceNameIndex != -1) {
+                        sfenList[index+1] = pieceNameListSfen[pieceNameIndex]
+                    }
+                }
+            }
+        }
+        Log.d("OpenCV", sfenList.joinToString(""))
+
+        // create json
+        val rootObject = JSONObject()
+        rootObject.put("sfen", util.sfenSpaceMerge(sfenList.joinToString("")))
         Log.d("OpenCV", rootObject.toString())
         return rootObject.toString()
     }

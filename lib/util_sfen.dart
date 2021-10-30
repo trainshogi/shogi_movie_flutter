@@ -37,15 +37,25 @@ bool isInitialPosition(String sfen){
 }
 
 List<String> sfenSpacePurge(String sfen) {
+  bool promote = false;
   var sfenPurge = <String>[];
   sfen.split("").forEach((char) {
-    final number = num.tryParse(char);
-    if (number != null) {
-      List<String> tmp = [for(var i=0; i<number; i+=1) " 1"];
-      sfenPurge.addAll(tmp);
+    if (char == "+") {
+      promote = true;
     }
     else {
-      sfenPurge.add(" " + char);
+      final number = num.tryParse(char);
+      if (number != null) {
+        List<String> tmp = [for(var i=0; i<number; i+=1) " 1"];
+        sfenPurge.addAll(tmp);
+      }
+      else if (promote) {
+        sfenPurge.add("+" + char);
+        promote = false;
+      }
+      else {
+        sfenPurge.add(" " + char);
+      }
     }
   });
   return sfenPurge;
@@ -67,6 +77,19 @@ String sfenPurge2SfenString(List<String> sfenPurge) {
     }
   });
   return sfen;
+}
+List<String> sfenPurge2EnglishList(List<String> sfenPurge) {
+  List<String> englishList = [];
+  var spaceNum = 0;
+  sfenPurge.asMap().forEach((int i, String str) {
+    if (str == " 1" || str == " /") {
+      englishList.add("");
+    }
+    else {
+      englishList.add(pieceNameListEnglish[pieceNameListSfen.indexOf(str.replaceFirst(" ", ""))]);
+    }
+  });
+  return englishList;
 }
 
 String sfenPieceName2Filename(String pieceNameSfen) {
@@ -143,6 +166,26 @@ Map<String, int> getMovement(String prevPiecePlace, String nextPiecePlace) {
   for (int i = 0; i < prevPiecePlace.length; i++) {
     if (prevPiecePlace[i] != nextPiecePlace[i]) {
       if (nextPiecePlace[i] == "1") {
+        prevSpace = i;
+      }
+      else {
+        nextSpace = i;
+      }
+    }
+  }
+  return {"prevSpace": prevSpace, "nextSpace": nextSpace};
+}
+
+Map<String, int> getMovementWithSfenPhase(String prevSfen, String nextSfen) {
+  var prevSfenPurged = sfenSpacePurge(prevSfen);
+  var nextSfenPurged = sfenSpacePurge(nextSfen);
+  print(prevSfenPurged);
+  print(nextSfenPurged);
+  var prevSpace = -1;
+  var nextSpace = -1;
+  for (int i = 0; i < prevSfenPurged.length; i++) {
+    if (prevSfenPurged[i] != nextSfenPurged[i]) {
+      if (nextSfenPurged[i] == " 1") {
         prevSpace = i;
       }
       else {
@@ -244,52 +287,33 @@ String intSpace2SfenString(int space) {
   return (9 - space%10).toString() + String.fromCharCode(space~/10 + 1 + 96);
 }
 
-String createKif(int prevSpace, int nextSpace, String pieceNameEnglish, String prevSfen) {
+String createKif(int prevSpace, int nextSpace, String pieceNameEnglish, String prevSfen, bool nari) {
   String place = intSpace2KifString(nextSpace);
   String piece = pieceNameListJapaneseOneChar[pieceNameListEnglish.indexOf(pieceNameEnglish)].replaceFirst("v", "");
-  return place + piece;
-  // if (prevPiece.isEmpty) {
-  //   // put piece
-  //   return baseKif + "打";
-  // }
-  // else if (prevPiece[0] == " " && nextPiece[0] == "+") {
-  //   // promote piece
-  // }
-  // else {
-  //   // move piece
-  //   return ;
-  // }
-  // return [];
+  String put = (prevSpace == -1) ? "打" : "";
+  String nariStr = nari ? "成" : "";
+  return place + piece + put + nariStr;
 }
 
-String createSfenMove(int prevSpace, int nextSpace, String pieceNameEnglish, String prevSfen) {
-  String prevSpaceSfen = intSpace2SfenString(prevSpace);
+String createSfenMove(int prevSpace, int nextSpace, String pieceNameEnglish, String prevSfen, bool nari) {
+  String prevSpaceSfen = (prevSpace == -1) ? pieceNameEnglish.toUpperCase() + "*" : intSpace2SfenString(prevSpace);
   String nextSpaceSfen = intSpace2SfenString(nextSpace);
-  return prevSpaceSfen + nextSpaceSfen;
-  // if (prevPiece.isEmpty) {
-  //   // put piece
-  //   return baseKif + "打";
-  // }
-  // else if (prevPiece[0] == " " && nextPiece[0] == "+") {
-  //   // promote piece
-  // }
-  // else {
-  //   // move piece
-  //   return ;
-  // }
-  // return [];
+  String nariStr = nari ? "+" : "";
+  return prevSpaceSfen + nextSpaceSfen + nariStr;
 }
 
 String createSfenPhase(int prevSpace, int nextSpace, String pieceNameEnglish, String prevSfen) {
   List<String> sfenPurgeList = sfenSpacePurge(prevSfen);
-  sfenPurgeList[prevSpace] = " 1";
+  if (prevSpace > -1) { sfenPurgeList[prevSpace] = " 1"; }
   sfenPurgeList[nextSpace] = pieceNameListSfen[pieceNameListEnglish.indexOf(pieceNameEnglish)];
   return sfenPurge2SfenString(sfenPurgeList);
 }
 
-List<String> createAudioFilenameList(int prevSpace, int nextSpace, String pieceNameEnglish, String prevSfen, String movePattern) {
+List<String> createAudioFilenameList(int prevSpace, int nextSpace, String pieceNameEnglish, String prevSfen, String movePattern, bool nari) {
   List<String> filenameList = intSpace2KifString(nextSpace).split("");
-  filenameList.add((pieceNameListEnglish.indexOf(pieceNameEnglish.replaceFirst("v", "")) + 10).toString());
+  int head = pieceNameEnglish.replaceFirst("v", "").startsWith("n") ? 9 : 10;
+  filenameList.add((pieceNameListEnglish.indexOf(pieceNameEnglish.replaceFirst("v", "")) + head).toString());
   if (movePattern == "put") {filenameList.add("32");}
+  if (nari) {filenameList.add("30");}
   return filenameList;
 }

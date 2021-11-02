@@ -69,8 +69,8 @@ class _PieceUpsertState extends State<PieceUpsert> {
       return;
     }
 
-    var savedFile = await FileController.saveLocalImage(
-        imageFile, pieceGroupName, pieceNameListEnglish[pieceNameIndex] + '.jpg'); //追加
+    var savedFile = await FileController.saveLocalImageWithResize(
+        imageFile, pieceGroupName, pieceNameListEnglish[pieceNameIndex] + '.jpg', 320); //追加
 
     if (savedFile.existsSync()) {
       setState(() {

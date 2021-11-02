@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:camera/camera.dart';
 import 'package:ffi/ffi.dart';
+import 'package:image/image.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:image/image.dart' as imglib;
@@ -57,6 +58,24 @@ class FileController {
     // もしくは
     // var savedFile = await image.copy(imagePath);
     // でもOK
+
+    return savedFile;
+  }
+
+  // 画像をドキュメントへ保存する。
+  // 引数にはカメラ撮影時にreturnされるFileオブジェクトを持たせる。
+  // 画像は必要十分なサイズに変更
+  static Future saveLocalImageWithResize(XFile xFile, String dirName, String filename, int minWidth) async {
+    final path = await directoryPath(dirName);
+    final imagePath = '$path/$filename';
+    File imageFile = File(imagePath);
+
+    //Read a jpeg image from file.
+    Image image= decodeImage(await xFile.readAsBytes())!;
+    //Resize the image to a 120x? thumbnail (maintaining the aspect ratio).
+    Image resizedImage = copyResize(image, width: minWidth);
+    //Save the thumbnail as a PNG.
+    var savedFile = await imageFile.writeAsBytes(encodeJpg(resizedImage));
 
     return savedFile;
   }

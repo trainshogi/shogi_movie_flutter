@@ -55,10 +55,8 @@ class _BaseImgSettingState extends State<BaseImgSetting> {
     else {
       // final imageXFile = await _controller!.takePicture();
       var savedFile = await fileController.getImgFile(_savedImage);
-      relativePoints = absolutePoints2relativePoints(
-          _points, getPainterSize());
-      String directoryPath = await FileController.directoryPath(
-          widget.dirName);
+      relativePoints = sortPoints(absolutePoints2relativePoints(_points, getPainterSize()));
+      String directoryPath = await FileController.directoryPath(widget.dirName);
       var requestMap = {
         "platform": platformPieceDetect,
         "methodName": 'initial_piece_detect',

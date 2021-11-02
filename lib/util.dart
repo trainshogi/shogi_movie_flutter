@@ -29,6 +29,29 @@ List<Offset> relativePoints2absolutePoints(List<Offset> points, Size size) {
   return absolutePoints;
 }
 
+List<Offset> sortPoints(List<Offset> points) {
+  var sortedPoints = <Offset>[Offset.zero, Offset.zero, Offset.zero, Offset.zero];
+  Offset midPoint = Offset(
+      points.map((e) => e.dx).reduce((value, element) => value + element) / points.length,
+      points.map((e) => e.dy).reduce((value, element) => value + element) / points.length);
+  points.forEach((element) {
+    if (element.dx < midPoint.dx) {
+      if (element.dy < midPoint.dy) {
+        sortedPoints[0] = element;
+      } else {
+        sortedPoints[1] = element;
+      }
+    } else {
+      if (element.dy < midPoint.dy) {
+        sortedPoints[3] = element;
+      } else {
+        sortedPoints[2] = element;
+      }
+    }
+  });
+  return sortedPoints;
+}
+
 List<Offset> string2Offsets(String row) {
   var offsets = <Offset>[];
   List<String> rowOffsets = row.split(':');

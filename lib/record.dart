@@ -7,6 +7,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shogi_movie_flutter/audio_controller.dart';
 import 'package:shogi_movie_flutter/camera.dart';
 import 'package:shogi_movie_flutter/result.dart';
 import 'package:shogi_movie_flutter/util.dart';
@@ -27,6 +28,7 @@ class Record extends StatefulWidget {
 
 class _RecordState extends State<Record> {
   FileController fileController = FileController();
+  AudioController audioController = AudioController();
   String? imageFilePath;
   File? imageFile;
   Image? image;
@@ -97,8 +99,7 @@ class _RecordState extends State<Record> {
     super.initState();
     initCamera();
     Wakelock.enable();
-    _player.load("sounds/initial.mp3");
-    _player.play("sounds/initial.mp3");
+    audioController.play(["initial"]);
     currentSfen = initial_sfen;
   }
 
@@ -261,11 +262,12 @@ class _RecordState extends State<Record> {
 
                               // play sounds
                               List<String> filenames = createAudioFilenameList(prevSpace, nextSpace, piece, currentSfen, movePattern, nari);
-                              for (String filename in filenames) {
-                                _player.load("sounds/$filename.mp3");
-                                _player.play("sounds/$filename.mp3");
-                                await Future.delayed(const Duration(seconds: 1));
-                              }
+                              audioController.play(filenames);
+                              // for (String filename in filenames) {
+                              //   _player.load("sounds/$filename.mp3");
+                              //   _player.play("sounds/$filename.mp3");
+                              //   await Future.delayed(const Duration(seconds: 1));
+                              // }
                             });
                           });
                         },

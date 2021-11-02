@@ -31,6 +31,7 @@ class _BaseImgSettingState extends State<BaseImgSetting> {
   String currentSfen = "";
   bool onProgress = false;
   bool _cameraStreamOn = false;
+  bool _initialized = false;
 
   //カメラリスト
   List<CameraDescription>? _cameras;
@@ -177,6 +178,7 @@ class _BaseImgSettingState extends State<BaseImgSetting> {
                                     _detectPiecePlace().then((value) =>
                                         setState(() {
                                           onProgress = false;
+                                          _initialized = true;
                                           Wakelock.disable();
                                         })
                                     );
@@ -187,10 +189,14 @@ class _BaseImgSettingState extends State<BaseImgSetting> {
                                 child: ElevatedButton(
                                   child: const Text('スタート'),
                                   onPressed: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(builder: (context) => Record(dirName: widget.dirName, relativePoints: relativePoints!)),
-                                    );
+                                    if (_initialized == false) {
+                                      alertDialog(context, "初期駒チェックを行ってください");
+                                    } else {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(builder: (context) => Record(dirName: widget.dirName, relativePoints: relativePoints!)),
+                                      );
+                                    }
                                   },
                                 )),
                           ]

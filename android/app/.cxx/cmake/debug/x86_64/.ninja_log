@@ -1,0 +1,4 @@
+# ninja log v5
+0	65	1635504359	CMakeFiles/convertImage.dir/Users/satoakira/StudioProjects/shogi_movie_flutter/ios/Classes/converter.c.o	d9b32b16d72f4ede
+66	106	1635504359	/Users/satoakira/StudioProjects/shogi_movie_flutter/build/app/intermediates/cmake/debug/obj/x86_64/libconvertImage.so	b427024be7fd5793
+0	70	1635911707	/Users/satoakira/StudioProjects/shogi_movie_flutter/build/app/intermediates/cmake/debug/obj/x86_64/libconvertImage.so	b427024be7fd5793

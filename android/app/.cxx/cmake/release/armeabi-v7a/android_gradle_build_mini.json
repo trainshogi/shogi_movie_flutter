@@ -1,0 +1,20 @@
+{
+  "buildFiles": [
+    "/Users/satoakira/StudioProjects/shogi_movie_flutter/android/CMakeLists.txt",
+    "/Users/satoakira/Library/Android/sdk/ndk/21.1.6352462/build/cmake/android.toolchain.cmake",
+    "/Users/satoakira/Library/Android/sdk/ndk/21.1.6352462/build/cmake/platforms.cmake"
+  ],
+  "cleanCommands": [
+    "/Users/satoakira/Library/Android/sdk/cmake/3.10.2.4988404/bin/ninja -C \"/Users/satoakira/StudioProjects/shogi_movie_flutter/android/app/.cxx/cmake/release/armeabi-v7a\" clean"
+  ],
+  "buildTargetsCommand": "/Users/satoakira/Library/Android/sdk/cmake/3.10.2.4988404/bin/ninja  -C \"/Users/satoakira/StudioProjects/shogi_movie_flutter/android/app/.cxx/cmake/release/armeabi-v7a\" {LIST_OF_TARGETS_TO_BUILD}",
+  "libraries": {
+    "convertImage-Release-armeabi-v7a": {
+      "artifactName": "convertImage",
+      "buildCommand": "/Users/satoakira/Library/Android/sdk/cmake/3.10.2.4988404/bin/ninja -C \"/Users/satoakira/StudioProjects/shogi_movie_flutter/android/app/.cxx/cmake/release/armeabi-v7a\" convertImage",
+      "abi": "armeabi-v7a",
+      "output": "/Users/satoakira/StudioProjects/shogi_movie_flutter/build/app/intermediates/cmake/release/obj/armeabi-v7a/libconvertImage.so",
+      "runtimeFiles": []
+    }
+  }
+}

@@ -1,0 +1,3 @@
+/Users/satoakira/StudioProjects/shogi_movie_flutter/android/app/.cxx/cmake/release/x86_64/CMakeFiles/rebuild_cache.dir
+/Users/satoakira/StudioProjects/shogi_movie_flutter/android/app/.cxx/cmake/release/x86_64/CMakeFiles/edit_cache.dir
+/Users/satoakira/StudioProjects/shogi_movie_flutter/android/app/.cxx/cmake/release/x86_64/CMakeFiles/convertImage.dir

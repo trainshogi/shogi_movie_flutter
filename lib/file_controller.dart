@@ -15,10 +15,10 @@ typedef Convert = Pointer<Uint32> Function(Pointer<Uint8>, Pointer<Uint8>, Point
 class FileController {
 
   // Load the convertImage() function from the library
-  Convert conv = (Platform.isAndroid
-      ? DynamicLibrary.open("libconvertImage.so")
-      : DynamicLibrary.process())
-      .lookup<NativeFunction<convert_func>>('convertImage').asFunction<Convert>();
+  // Convert conv = (Platform.isAndroid
+  //     ? DynamicLibrary.open("libconvertImage.so")
+  //     : DynamicLibrary.process())
+  //     .lookup<NativeFunction<convert_func>>('convertImage').asFunction<Convert>();
 
   // ドキュメントのパスを取得
   static Future get localPath async {
@@ -96,7 +96,13 @@ class FileController {
     return savedFile;
   }
 
-  Future<File> getImgFile(CameraImage _savedImage) async {
+  imglib.Image cameraImageYUV420toImage(CameraImage _savedImage) {
+    // Load the convertImage() function from the library
+    Convert conv = (Platform.isAndroid
+        ? DynamicLibrary.open("libconvertImage.so")
+        : DynamicLibrary.process())
+        .lookup<NativeFunction<convert_func>>('convertImage').asFunction<Convert>();
+
     // Allocate memory for the 3 planes of the image
     Pointer<Uint8> p = calloc(_savedImage.planes[0].bytes.length);
     Pointer<Uint8> p1 = calloc(_savedImage.planes[1].bytes.length);
@@ -119,14 +125,29 @@ class FileController {
     // Generate image from the converted data
     imglib.Image img = imglib.Image.fromBytes(_savedImage.height, _savedImage.width, imgData);
 
-    File file = await saveLocalImageBytes(imglib.encodeJpg(img), 'tmp', 'base.jpg');
-
     // Free the memory space allocated
     // from the planes and the converted data
     calloc.free(p);
     calloc.free(p1);
     calloc.free(p2);
     calloc.free(imgP);
+
+    return img;
+  }
+
+  imglib.Image cameraImageBGRA8888toImage(CameraImage image) {
+    return imglib.Image.fromBytes(
+      image.width,
+      image.height,
+      image.planes[0].bytes,
+      format: imglib.Format.bgra,
+    );
+  }
+
+  Future<File> getImgFile(CameraImage _savedImage) async {
+    imglib.Image img = (Platform.isAndroid ? cameraImageYUV420toImage(_savedImage) : cameraImageBGRA8888toImage(_savedImage));
+
+    File file = await saveLocalImageBytes(imglib.encodeJpg(img), 'tmp', 'base.jpg');
 
     return file;
   }

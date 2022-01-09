@@ -1,5 +1,6 @@
 import UIKit
 import Flutter
+import opencv2
 
 @UIApplicationMain
 @objc class AppDelegate: FlutterAppDelegate {
@@ -41,7 +42,7 @@ import Flutter
     let dirName = parameters["dirName"] as! String
     let points = parameters["points"] as! String
     
-    let grayImg = OpenCVManager.gray(UIImage(contentsOfFile: srcPath))!
+    let grayImg = convertColor(srcImage: UIImage(contentsOfFile: srcPath)!) // OpenCVManager.gray(UIImage(contentsOfFile: srcPath))!
     let filename = "grayImg.png" as String
     let grayImgPath = fileInDocumentsDirectory(filename: filename)
     saveImage(image: grayImg, path: grayImgPath)
@@ -54,6 +55,13 @@ import Flutter
     } catch let error {
       print(error)
     }
+  }
+  
+  func convertColor(srcImage: UIImage) -> UIImage {
+      let srcMat = Mat(uiImage: srcImage)
+      let dstMat = Mat()
+      Imgproc.cvtColor(src: srcMat, dst: dstMat, code: .COLOR_RGB2GRAY)
+      return dstMat.toUIImage()
   }
   
   //画像保存

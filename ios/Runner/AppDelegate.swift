@@ -10,9 +10,10 @@ import opencv2
   ) -> Bool {
     
     let controller : FlutterViewController = window?.rootViewController as! FlutterViewController
-    let batteryChannel = FlutterMethodChannel(name: "com.nkkuma.dev/piece_detect",
+    let pieceDetectChannel = FlutterMethodChannel(name: "com.nkkuma.dev/piece_detect",
                                               binaryMessenger: controller.binaryMessenger)
-    batteryChannel.setMethodCallHandler({
+    
+    pieceDetectChannel.setMethodCallHandler({
       (call: FlutterMethodCall, result: @escaping FlutterResult) -> Void in
 //         Note: this method is invoked on the UI thread.
 //        guard call.method == "initial_piece_detect" else {
@@ -33,6 +34,9 @@ import opencv2
     GeneratedPluginRegistrant.register(with: self)
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
+  
+  // static variables
+  let fileController = FileController()
     
   private func initial_piece_detect(result: FlutterResult, parameters: Dictionary<String, Any>) {
     let device = UIDevice.current
@@ -45,7 +49,7 @@ import opencv2
     let grayImg = convertColor(srcImage: UIImage(contentsOfFile: srcPath)!) // OpenCVManager.gray(UIImage(contentsOfFile: srcPath))!
     let filename = "grayImg.png" as String
     let grayImgPath = fileInDocumentsDirectory(filename: filename)
-    saveImage(image: grayImg, path: grayImgPath)
+    fileController.saveImage(image: grayImg, path: grayImgPath)
     
     let dictionay1: Dictionary<String, Any> = ["imgPath": grayImgPath, "sfen": "lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL"]
     do {
@@ -74,16 +78,5 @@ import opencv2
   func fileInDocumentsDirectory(filename: String) -> String {
     let fileURL = getDocumentsURL().appendingPathComponent(filename)
     return fileURL!.path
-  }
-  //画像を保存するメソッド
-  func saveImage (image: UIImage, path: String ) -> Bool {
-    let jpgImageData = image.jpegData(compressionQuality:0.5)
-    do {
-        try jpgImageData!.write(to: URL(fileURLWithPath: path), options: .atomic)
-    } catch {
-        print(error)
-        return false
-    }
-    return true
   }
 }

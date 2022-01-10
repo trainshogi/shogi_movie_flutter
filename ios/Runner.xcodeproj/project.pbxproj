@@ -16,6 +16,7 @@
 		97C147011CF9000F007C117D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */; };
 		C718985E2775E5A4001D60B0 /* opencv2.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C718985D2775E5A4001D60B0 /* opencv2.framework */; };
 		C718986B278AAD1D001D60B0 /* libc++.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = C718986A278AACC6001D60B0 /* libc++.tbd */; };
+		C718986D278C3ADE001D60B0 /* FileController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C718986C278C3ADE001D60B0 /* FileController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -51,6 +52,7 @@
 		9C023DBD24EC9D8311EC3B3C /* Pods-Runner.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.debug.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.debug.xcconfig"; sourceTree = "<group>"; };
 		C718985D2775E5A4001D60B0 /* opencv2.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = opencv2.framework; path = Runner/opencv2.framework; sourceTree = "<group>"; };
 		C718986A278AACC6001D60B0 /* libc++.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = "libc++.tbd"; path = "usr/lib/libc++.tbd"; sourceTree = SDKROOT; };
+		C718986C278C3ADE001D60B0 /* FileController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -128,6 +130,7 @@
 				1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */,
 				74858FAE1ED2DC5600515810 /* AppDelegate.swift */,
 				74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */,
+				C718986C278C3ADE001D60B0 /* FileController.swift */,
 			);
 			path = Runner;
 			sourceTree = "<group>";
@@ -279,6 +282,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C718986D278C3ADE001D60B0 /* FileController.swift in Sources */,
 				74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */,
 				1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */,
 			);

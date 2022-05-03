@@ -28,7 +28,7 @@ class _CameraState extends State<Camera> {
     }
 
     return AspectRatio(
-      aspectRatio: 1/widget.controller.value.aspectRatio,
+      aspectRatio: 0.7,// 1/widget.controller.value.aspectRatio,
       child: CameraPreview(widget.controller),
     );
   }

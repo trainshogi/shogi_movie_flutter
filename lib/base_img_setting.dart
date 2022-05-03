@@ -95,8 +95,8 @@ class _BaseImgSettingState extends State<BaseImgSetting> {
         ResolutionPreset.high,
         imageFormatGroup: ImageFormatGroup.yuv420
       );
-      _controller!.setFlashMode(FlashMode.always);
       _controller!.initialize().then((_) async {
+        _controller!.setFlashMode(FlashMode.torch);
         if (!mounted) {
           return;
         }
@@ -158,7 +158,7 @@ class _BaseImgSettingState extends State<BaseImgSetting> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Padding(
-                        padding: const EdgeInsets.fromLTRB(180, 10, 120, 10),
+                        padding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
                         child: cameraImageOrIcon()
                       ),
                       Row(

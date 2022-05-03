@@ -17,6 +17,7 @@
 		C718985E2775E5A4001D60B0 /* opencv2.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C718985D2775E5A4001D60B0 /* opencv2.framework */; };
 		C718986B278AAD1D001D60B0 /* libc++.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = C718986A278AACC6001D60B0 /* libc++.tbd */; };
 		C718986D278C3ADE001D60B0 /* FileController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C718986C278C3ADE001D60B0 /* FileController.swift */; };
+		C718986F278C43ED001D60B0 /* Util.swift in Sources */ = {isa = PBXBuildFile; fileRef = C718986E278C43ED001D60B0 /* Util.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -53,6 +54,7 @@
 		C718985D2775E5A4001D60B0 /* opencv2.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = opencv2.framework; path = Runner/opencv2.framework; sourceTree = "<group>"; };
 		C718986A278AACC6001D60B0 /* libc++.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = "libc++.tbd"; path = "usr/lib/libc++.tbd"; sourceTree = SDKROOT; };
 		C718986C278C3ADE001D60B0 /* FileController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileController.swift; sourceTree = "<group>"; };
+		C718986E278C43ED001D60B0 /* Util.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Util.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -131,6 +133,7 @@
 				74858FAE1ED2DC5600515810 /* AppDelegate.swift */,
 				74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */,
 				C718986C278C3ADE001D60B0 /* FileController.swift */,
+				C718986E278C43ED001D60B0 /* Util.swift */,
 			);
 			path = Runner;
 			sourceTree = "<group>";
@@ -285,6 +288,7 @@
 				C718986D278C3ADE001D60B0 /* FileController.swift in Sources */,
 				74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */,
 				1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */,
+				C718986F278C43ED001D60B0 /* Util.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

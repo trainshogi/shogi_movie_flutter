@@ -1,7 +1,9 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 
 import 'file_controller.dart';
@@ -35,6 +37,8 @@ class _PieceUpsertState extends State<PieceUpsert> {
     "fu", "kyo", "kei", "gin", "kin", "kaku", "hisya", "ou", "gyoku",
     "nfu", "nkyo", "nkei", "ngin", "nkaku", "nhisya"
   ];
+
+  static const platformPieceDetect = MethodChannel('com.nkkuma.dev/piece_detect');
 
   // タッチした点を覚えておく
   final _points = <Offset>[];
@@ -73,11 +77,30 @@ class _PieceUpsertState extends State<PieceUpsert> {
         imageFile, pieceGroupName, pieceNameListEnglish[pieceNameIndex] + '.jpg', 320); //追加
 
     if (savedFile.existsSync()) {
+      findContour(savedFile.path).then((value) => {
+        setState(() {
+          _points.clear();
+          value["points"]?.forEach((element) {
+            _points.add(Offset(element[0].toDouble(), element[1].toDouble()));
+          });
+        })
+      });
       setState(() {
         // this.imageFile = imageFile;
         this.imageFile = savedFile; //変更
       });
     }
+  }
+
+  Future<Map<String, dynamic>> findContour(String imageFilePath) async {
+    Map<String, dynamic> pieceRequestMap = {
+      "platform": platformPieceDetect,
+      "methodName": "find_contours",
+      "args": {
+        'srcPath': imageFilePath
+      }
+    };
+    return jsonDecode(await callInvokeMethod(pieceRequestMap) as String);
   }
 
   void _prevPieceButtonPushed() {

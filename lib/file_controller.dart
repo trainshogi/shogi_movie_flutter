@@ -65,7 +65,7 @@ class FileController {
   // 画像をドキュメントへ保存する。
   // 引数にはカメラ撮影時にreturnされるFileオブジェクトを持たせる。
   // 画像は必要十分なサイズに変更
-  static Future saveLocalImageWithResize(XFile xFile, String dirName, String filename, int minWidth) async {
+  static Future<File> saveLocalImageWithResize(XFile xFile, String dirName, String filename, int minWidth) async {
     final path = await directoryPath(dirName);
     final imagePath = '$path/$filename';
     File imageFile = File(imagePath);

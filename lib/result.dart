@@ -1,9 +1,8 @@
 import 'dart:io';
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:shogi_movie_flutter/util_sfen.dart';
+import 'package:shogi_movie_flutter/util/util_sfen.dart';
 
 class Result extends StatefulWidget {
   final int moveNumber;

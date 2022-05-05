@@ -1,14 +1,16 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:shogi_movie_flutter/domain/piece.dart';
 
-import 'file_controller.dart';
-import 'image_and_painter.dart';
-import 'util.dart';
+import 'domain/piece_list.dart';
+import 'controller/file_controller.dart';
+import 'controller/image_and_painter.dart';
+import 'util/util.dart';
+import 'util/util_widget.dart';
 
 class PieceUpsert extends StatefulWidget {
   final String dirName;
@@ -25,18 +27,10 @@ class _PieceUpsertState extends State<PieceUpsert> {
   int movePointIndex = 0;
   int pieceNameIndex = 0;
   String pieceGroupName = ""; // initialize in initState
-  String pieceNameJapanese = "歩兵";
   GlobalKey globalKeyForPainter = GlobalKey();
 
   // static variables
-  final pieceNameListJapanese = [
-    "歩兵", "香車", "桂馬", "銀将", "金将", "角行", "飛車", "王将", "玉将",
-    "と金", "成香", "成桂", "成銀", "竜馬", "龍王"
-  ];
-  final pieceNameListEnglish = [
-    "fu", "kyo", "kei", "gin", "kin", "kaku", "hisya", "ou", "gyoku",
-    "nfu", "nkyo", "nkei", "ngin", "nkaku", "nhisya"
-  ];
+  final pieceNameList = firstPieceList;
 
   static const platformPieceDetect = MethodChannel('com.nkkuma.dev/piece_detect');
 
@@ -45,9 +39,9 @@ class _PieceUpsertState extends State<PieceUpsert> {
 
   void _getImageFromDevice() async {
     File savedFile = await FileController.loadLocalImage(
-        pieceGroupName, pieceNameListEnglish[pieceNameIndex] + '.jpg');
+        pieceGroupName, pieceNameList[pieceNameIndex].english + '.jpg');
     File pointFile = await FileController.loadLocalFile(
-        pieceGroupName, pieceNameListEnglish[pieceNameIndex] + '.txt');
+        pieceGroupName, pieceNameList[pieceNameIndex].english + '.txt');
 
     if (savedFile.existsSync()) {
       setState(() {
@@ -74,7 +68,7 @@ class _PieceUpsertState extends State<PieceUpsert> {
     }
 
     var savedFile = await FileController.saveLocalImageWithResize(
-        imageFile, pieceGroupName, pieceNameListEnglish[pieceNameIndex] + '.jpg', 320); //追加
+        imageFile, pieceGroupName, pieceNameList[pieceNameIndex].english + '.jpg', 320); //追加
 
     if (savedFile.existsSync()) {
       findContour(savedFile.path).then((value) => {
@@ -133,7 +127,7 @@ class _PieceUpsertState extends State<PieceUpsert> {
     else if (_points.length < 3) {
       alertDialog(context, '駒の枠が設定されていません。');
     }
-    else if (pieceNameIndex == pieceNameListJapanese.length - 1) {
+    else if (pieceNameIndex == pieceNameList.length - 1) {
       _saveList();
       successDialog(context, '駒の設定が終了しました。');
     }
@@ -159,7 +153,7 @@ class _PieceUpsertState extends State<PieceUpsert> {
     String relativeConverted = absolutePoints2relativePoints(_points, getPainterSize()).join(":");
     print(absoluteConverted + "/" + relativeConverted);
     FileController.saveLocalFile(absoluteConverted + "/" + relativeConverted,
-        pieceGroupName, pieceNameListEnglish[pieceNameIndex] + '.txt'); //追加
+        pieceGroupName, pieceNameList[pieceNameIndex].english + '.txt'); //追加
   }
 
   @override
@@ -184,7 +178,7 @@ class _PieceUpsertState extends State<PieceUpsert> {
             children: [
               Padding(
                 padding: const EdgeInsets.all(10),
-                child: Text(pieceNameListJapanese[pieceNameIndex] + 'の画像設定'),
+                child: Text(pieceNameList[pieceNameIndex].japanese + 'の画像設定'),
               ),
               Padding(
                 padding: const EdgeInsets.all(10),

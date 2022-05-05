@@ -1,21 +1,21 @@
-import 'dart:convert';
 import 'dart:io';
 
-import 'package:audioplayers/audioplayers.dart';
 import 'package:camera/camera.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:shogi_movie_flutter/audio_controller.dart';
-import 'package:shogi_movie_flutter/camera.dart';
+import 'package:shogi_movie_flutter/controller/audio_controller.dart';
+import 'package:shogi_movie_flutter/controller/camera.dart';
 import 'package:shogi_movie_flutter/result.dart';
-import 'package:shogi_movie_flutter/util.dart';
-import 'package:shogi_movie_flutter/util_sfen.dart';
+import 'package:shogi_movie_flutter/util/util.dart';
+import 'package:shogi_movie_flutter/util/util_sfen.dart';
+import 'package:shogi_movie_flutter/util/util_widget.dart';
 import 'package:wakelock/wakelock.dart';
 
-import 'file_controller.dart';
-import 'overlay_loading_molecules.dart';
+import 'domain/board.dart';
+import 'domain/piece.dart';
+import 'domain/piece_list.dart';
+import 'controller/file_controller.dart';
+import 'controller/overlay_loading_molecules.dart';
 
 class Record extends StatefulWidget {
   final String dirName;
@@ -32,9 +32,9 @@ class _RecordState extends State<Record> {
   String? imageFilePath;
   File? imageFile;
   Image? image;
-  final AudioCache _player = AudioCache(fixedPlayer: AudioPlayer());
   int currentMoveNumber = 0;
-  String currentSfen = "";
+  // String currentSfen = "";
+  Board board = Board();
   String currentPiecePlace = "ZZZZZZZZZ/1Z11111Z1/ZZZZZZZZZ/111111111/111111111/111111111/ZZZZZZZZZ/1Z11111Z1/ZZZZZZZZZ";
   String currentKif = "";
   List<String> sfenMoveList = [];
@@ -100,7 +100,7 @@ class _RecordState extends State<Record> {
     initCamera();
     Wakelock.enable();
     audioController.play(["initial"]);
-    currentSfen = initial_sfen;
+    // currentSfen = initial_sfen;
   }
 
   @override
@@ -111,6 +111,97 @@ class _RecordState extends State<Record> {
     super.dispose();
   }
 
+  void onPressedCamera() {
+    // set waiting loop
+    // take picture
+    // _controller!.takePicture().then((value) {
+    fileController.getImgFile(_savedImage).then((value) {
+      // ImagePicker().pickImage(source: ImageSource.gallery).then((value) {
+      imageFilePath = value.path;
+      setState(() {
+        _cameraOn = false;
+        onProgress = true;
+      });
+      // recognize image
+      FileController.directoryPath(widget.dirName).then((value) async {
+        directoryPath = value;
+        // get piece place
+        Map<String, dynamic> detectPlaceJson = await getPiecePlace(
+          platformPieceDetect, imageFilePath!, widget.relativePoints, directoryPath);
+        String piecePlace = detectPlaceJson["sfen"];
+        print(detectPlaceJson.toString());
+
+        // detect movement
+        Map<String, int> moveMap = getMovement(currentPiecePlace, detectPlaceJson["sfen"]);
+
+        // detect piece
+        int prevSpace = moveMap["prevSpace"]!;
+        int nextSpace = moveMap["nextSpace"]!;
+        Piece prevPiece = (prevSpace != -1) ? board.board[prevSpace~/10][prevSpace%10] : Piece.NONE;
+        Piece nextPiece;
+        bool nari = false;
+        Piece piece;
+        String movePattern = "";
+        if (prevSpace > -1 && nextSpace > -1) {
+          // if user moves piece, just detect nextSpace's piece
+          movePattern = "move";
+          piece = prevPiece;
+          String pieceNames = (prevPiece.promoted == Piece.NONE)
+              ? prevPiece.english : prevPiece.english + "," + prevPiece.promoted.english;
+          Map<String, dynamic> detectPieceJson = await onePieceDetect(
+              platformPieceDetect, imageFilePath!, widget.relativePoints,
+              directoryPath, moveMap, pieceNames);
+          nextPiece = Piece.values.firstWhere((e) => e.english == detectPieceJson["piece"]);
+          // if prevPiece and nextPiece is different, it is "nari"
+          nari = (prevPiece != nextPiece) ? true : false;
+        }
+        else if (nextSpace > -1) {
+          // if user put piece, just detect nextSpace's piece
+          movePattern = "put";
+          String pieceNames = (currentMoveNumber%2 == 0)
+              ? firstNonPromotedPieceList.map((Piece p) => p.english).toList().join(",")
+              : secondNonPromotedPieceList.map((Piece p) => p.english).toList().join(",");
+          Map<String, dynamic> detectPieceJson = await onePieceDetect(
+              platformPieceDetect, imageFilePath!, widget.relativePoints,
+              directoryPath, moveMap, pieceNames);
+          piece = Piece.values.firstWhere((e) => e.english == detectPieceJson["piece"]);
+          nextPiece = Piece.values.firstWhere((e) => e.english == detectPieceJson["piece"]);
+        }
+        else {
+          // if user take piece, search all pieces and get diff
+          movePattern = "take";
+          piece = prevPiece;
+          String pieceNames = (prevPiece.promoted == Piece.NONE)
+              ? prevPiece.english : prevPiece.english + "," + prevPiece.promoted.english;
+          print(pieceNames);
+          print(board.toSfen());
+          Map<String, dynamic> detectPieceJson = await allPieceDetect(
+              platformPieceDetect, imageFilePath!, widget.relativePoints,
+              directoryPath, board, pieceNames);
+          Board detectedBoard = Board().fromSfen(detectPieceJson["sfen"]);
+          Map<String, int> moveMap = getMovementWithBoard(board, detectedBoard);
+          nextSpace = moveMap["nextSpace"]!;
+          nextPiece = detectedBoard.board[nextSpace~/10][nextSpace%10];
+          // if prevPiece and nextPiece is different, it is "nari"
+          nari = (prevPiece != nextPiece) ? true : false;
+        }
+
+        setState(() {
+          _cameraOn = true;
+          onProgress = false;
+          currentMoveNumber += 1;
+          updateBoard(prevSpace, nextSpace, piece, board, nari);
+          currentKif = createKif(prevSpace, nextSpace, piece, board, nari);
+          sfenMoveList.add(createSfenMove(prevSpace, nextSpace, piece, board, nari));
+          currentPiecePlace = piecePlace;
+        });
+
+        // play sounds
+        List<String> filenames = createAudioFilenameList(prevSpace, nextSpace, piece, board, movePattern, nari);
+        audioController.play(filenames);
+      });
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -139,138 +230,7 @@ class _RecordState extends State<Record> {
                     children: [
                       ElevatedButton(
                         child: const Text('撮影'),
-                        onPressed: () {
-                          // set waiting loop
-                          // take picture
-                          // _controller!.takePicture().then((value) {
-                          fileController.getImgFile(_savedImage).then((value) {
-                          // ImagePicker().pickImage(source: ImageSource.gallery).then((value) {
-                            imageFilePath = value.path;
-                            setState(() {
-                              _cameraOn = false;
-                              onProgress = true;
-                            });
-                            // recognize image
-                            FileController.directoryPath(widget.dirName).then((value) async {
-                              directoryPath = value;
-                              // get piece place
-                              Map<String, dynamic> placeRequestMap = {
-                                "platform": platformPieceDetect,
-                                "methodName": "piece_place_detect",
-                                "args": {
-                                  'srcPath': imageFilePath!,
-                                  'points': widget.relativePoints.toString(),
-                                  'dirName': directoryPath
-                                }
-                              };
-                              var detectPlaceJson = jsonDecode(await callInvokeMethod(placeRequestMap) as String);
-                              String piecePlace = detectPlaceJson["sfen"];
-                              print(detectPlaceJson.toString());
-
-                              // detect movement
-                              var moveMap = getMovement(currentPiecePlace, detectPlaceJson["sfen"]);
-
-                              // detect piece
-                              int prevSpace = moveMap["prevSpace"]!;
-                              int nextSpace = moveMap["nextSpace"]!;
-                              String prevPiece = (prevSpace != -1) ? getPieceFromSfen(currentSfen, prevSpace) : "";
-                              String nextPiece;
-                              bool nari = false;
-                              String piece;
-                              String movePattern = "";
-                              if (prevSpace > -1 && nextSpace > -1) {
-                                // if user moves piece, just detect nextSpace's piece
-                                movePattern = "move";
-                                piece = prevPiece;
-                                String promotePiece = promoteEnglishPieceName(prevPiece);
-                                String pieceNames = (promotePiece.isEmpty) ? prevPiece : prevPiece + "," + promotePiece;
-                                Map<String, dynamic> pieceRequestMap = {
-                                  "platform": platformPieceDetect,
-                                  "methodName": "one_piece_detect",
-                                  "args": {
-                                    'srcPath': imageFilePath!,
-                                    'dirName': directoryPath,
-                                    'points': widget.relativePoints.toString(),
-                                    'space': (moveMap["nextSpace"]!%10).toString() + "," + (moveMap["nextSpace"]!/10).floor().toString(),
-                                    'pieceNames': pieceNames
-                                  }
-                                };
-                                var detectPieceJson = jsonDecode(await callInvokeMethod(pieceRequestMap) as String);
-                                nextPiece = detectPieceJson["piece"];
-                                // if prevPiece and nextPiece is different, it is "nari"
-                                nari = (prevPiece != nextPiece) ? true : false;
-                              }
-                              else if (nextSpace > -1) {
-                                // if user put piece, just detect nextSpace's piece
-                                movePattern = "put";
-                                String pieceNames = (currentMoveNumber%2 == 0)
-                                    ? nonPromotedFirstMoveEnglishPieceNameList.join(",")
-                                    : nonPromotedSecondMoveEnglishPieceNameList.join(",");
-                                Map<String, dynamic> pieceRequestMap = {
-                                  "platform": platformPieceDetect,
-                                  "methodName": "one_piece_detect",
-                                  "args": {
-                                    'srcPath': imageFilePath!,
-                                    'dirName': directoryPath,
-                                    'points': widget.relativePoints.toString(),
-                                    'space': (moveMap["nextSpace"]!%10).toString() + "," + (moveMap["nextSpace"]!/10).floor().toString(),
-                                    'pieceNames': pieceNames
-                                  }
-                                };
-                                var detectPieceJson = jsonDecode(await callInvokeMethod(pieceRequestMap) as String);
-                                piece = detectPieceJson["piece"];
-                                nextPiece = detectPieceJson["piece"];
-                              }
-                              else {
-                                // if user take piece, search all pieces and get diff
-                                movePattern = "take";
-                                piece = prevPiece;
-                                String promotePiece = promoteEnglishPieceName(prevPiece);
-                                String pieceNames = (promotePiece.isEmpty) ? prevPiece : prevPiece + "," + promotePiece;
-                                print(pieceNames);
-                                String piecePlaceListString = sfenPurge2EnglishList(sfenSpacePurge(currentSfen)).join(",");
-                                print(piecePlaceListString);
-                                Map<String, dynamic> pieceRequestMap = {
-                                  "platform": platformPieceDetect,
-                                  "methodName": "all_piece_detect",
-                                  "args": {
-                                    'srcPath': imageFilePath!,
-                                    'dirName': directoryPath,
-                                    'points': widget.relativePoints.toString(),
-                                    'piecePlaceListString': piecePlaceListString,
-                                    'pieceNames': pieceNames
-                                  }
-                                };
-                                var detectPieceJson = jsonDecode(await callInvokeMethod(pieceRequestMap) as String);
-                                var moveMap = getMovementWithSfenPhase(currentSfen, detectPieceJson["sfen"]);
-                                // prevSpace = moveMap["prevSpace"]!;
-                                nextSpace = moveMap["nextSpace"]!;
-                                nextPiece = getPieceFromSfen(detectPieceJson["sfen"], nextSpace);
-                                // if prevPiece and nextPiece is different, it is "nari"
-                                nari = (prevPiece != nextPiece) ? true : false;
-                              }
-
-                              setState(() {
-                                _cameraOn = true;
-                                onProgress = false;
-                                currentMoveNumber += 1;
-                                currentKif = createKif(prevSpace, nextSpace, piece, currentSfen, nari);
-                                sfenMoveList.add(createSfenMove(prevSpace, nextSpace, piece, currentSfen, nari));
-                                currentPiecePlace = piecePlace;
-                                currentSfen = createSfenPhase(prevSpace, nextSpace, nextPiece, currentSfen); // update to put nextPiece
-                              });
-
-                              // play sounds
-                              List<String> filenames = createAudioFilenameList(prevSpace, nextSpace, piece, currentSfen, movePattern, nari);
-                              audioController.play(filenames);
-                              // for (String filename in filenames) {
-                              //   _player.load("sounds/$filename.mp3");
-                              //   _player.play("sounds/$filename.mp3");
-                              //   await Future.delayed(const Duration(seconds: 1));
-                              // }
-                            });
-                          });
-                        },
+                        onPressed: onPressedCamera,
                       ),
                       ElevatedButton(
                         child: const Text('投了'),

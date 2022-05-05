@@ -1,7 +1,6 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:shogi_movie_flutter/base_img_setting.dart';
-import 'package:shogi_movie_flutter/util.dart';
+import 'package:shogi_movie_flutter/util/util.dart';
 
 class PieceSelect extends StatefulWidget {
   const PieceSelect({Key? key}) : super(key: key);

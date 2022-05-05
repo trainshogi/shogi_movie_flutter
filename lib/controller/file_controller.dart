@@ -5,11 +5,10 @@ import 'dart:typed_data';
 import 'package:camera/camera.dart';
 import 'package:ffi/ffi.dart';
 import 'package:image/image.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:image/image.dart' as imglib;
 
-typedef convert_func = Pointer<Uint32> Function(Pointer<Uint8>, Pointer<Uint8>, Pointer<Uint8>, Int32, Int32, Int32, Int32);
+typedef ConvertFunc = Pointer<Uint32> Function(Pointer<Uint8>, Pointer<Uint8>, Pointer<Uint8>, Int32, Int32, Int32, Int32);
 typedef Convert = Pointer<Uint32> Function(Pointer<Uint8>, Pointer<Uint8>, Pointer<Uint8>, int, int, int, int);
 
 class FileController {
@@ -101,7 +100,7 @@ class FileController {
     Convert conv = (Platform.isAndroid
         ? DynamicLibrary.open("libconvertImage.so")
         : DynamicLibrary.process())
-        .lookup<NativeFunction<convert_func>>('convertImage').asFunction<Convert>();
+        .lookup<NativeFunction<ConvertFunc>>('convertImage').asFunction<Convert>();
 
     // Allocate memory for the 3 planes of the image
     Pointer<Uint8> p = calloc(_savedImage.planes[0].bytes.length);

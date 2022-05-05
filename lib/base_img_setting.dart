@@ -2,19 +2,18 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:camera/camera.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:shogi_movie_flutter/image_and_painter.dart';
+import 'package:shogi_movie_flutter/controller/image_and_painter.dart';
 import 'package:shogi_movie_flutter/record.dart';
 import 'package:wakelock/wakelock.dart';
 
-import 'camera.dart';
-import 'file_controller.dart';
-import 'util.dart';
-import 'util_sfen.dart';
-import "overlay_loading_molecules.dart";
+import 'controller/camera.dart';
+import 'controller/file_controller.dart';
+import 'util/util.dart';
+import 'util/util_sfen.dart';
+import 'util/util_widget.dart';
+import 'controller/overlay_loading_molecules.dart';
 
 class BaseImgSetting extends StatefulWidget {
   final String dirName;

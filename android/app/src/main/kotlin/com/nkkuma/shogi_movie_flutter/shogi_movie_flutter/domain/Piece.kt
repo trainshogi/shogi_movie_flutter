@@ -1,6 +1,6 @@
 package com.nkkuma.shogi_movie_flutter.shogi_movie_flutter.domain
 
-enum class Koma(val english: String, val sfen: String) {
+enum class Piece(val english: String, val sfen: String) {
     NONE("", ""),
     EMPTY("", "1"),
     EXIST("", "Z"),

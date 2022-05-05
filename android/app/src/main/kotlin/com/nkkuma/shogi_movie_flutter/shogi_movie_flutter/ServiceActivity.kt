@@ -7,7 +7,7 @@ import android.os.Environment
 import android.util.Log
 import androidx.annotation.RequiresApi
 import com.nkkuma.shogi_movie_flutter.shogi_movie_flutter.domain.Board
-import com.nkkuma.shogi_movie_flutter.shogi_movie_flutter.domain.Koma
+import com.nkkuma.shogi_movie_flutter.shogi_movie_flutter.domain.Piece
 import org.json.JSONObject
 import org.opencv.android.OpenCVLoader
 import org.opencv.android.Utils
@@ -96,7 +96,6 @@ class ServiceActivity(private val serviceContext: Context) {
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.N)
     fun onePieceDetect(srcPath: String,
                                dirName: String,
                                points: String,
@@ -120,7 +119,6 @@ class ServiceActivity(private val serviceContext: Context) {
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.N)
     fun initialPieceDetect(srcPath: String,
                            dirName: String,
                            points: String): String {
@@ -133,20 +131,19 @@ class ServiceActivity(private val serviceContext: Context) {
             relativePoints = relativePoints
         ))
 
-        val board = Board()
-        board.fromSfen(positionJson.get("sfen") as String)
+        val board = Board().fromSfen(positionJson.get("sfen") as String)
         val matCropped = file2crop9x9Mat(srcPath, relativePoints)
         for ((i, line) in board.board.withIndex()) {
             for ((j, koma) in line.withIndex()) {
-                if (koma == Koma.EXIST) {
-                    if (initialBoard.board[i][j] == Koma.NONE) {
-                        board.board[i][j] = Koma.NONE
+                if (koma == Piece.EXIST) {
+                    if (initialBoard.board[i][j] == Piece.NONE) {
+                        board.board[i][j] = Piece.NONE
                     } else {
                         val pieceNameList = listOf(initialBoard.board[i][j].english)
                         val targetPlaceMat = spaceCroppedMat(matCropped, listOf(j, i))
                         val detectJsonObject = JSONObject(detectPiece(dirName, pieceNameList, listOf(), targetPlaceMat))
-                        val piece = Koma.values().firstOrNull { it.english == detectJsonObject.getString("piece") };
-                        board.board[i][j] = piece ?: Koma.NONE
+                        val piece = Piece.values().firstOrNull { it.english == detectJsonObject.getString("piece") };
+                        board.board[i][j] = piece ?: Piece.NONE
                     }
                 }
             }
@@ -166,11 +163,10 @@ class ServiceActivity(private val serviceContext: Context) {
         return rootObject.toString()
     }
 
-    @RequiresApi(Build.VERSION_CODES.N)
     fun allPieceDetect(srcPath: String,
                        dirName: String,
                        points: String,
-                       piecePlaceListString: String,
+                       sfen: String,
                        pieceNames: String): String {
         // load opencv
         loadOpenCV()
@@ -182,23 +178,22 @@ class ServiceActivity(private val serviceContext: Context) {
         ))
 
         Log.d("OpenCV", "all_piece_detect getCurrentPosition is finished.")
-        val board = Board()
-        board.fromSfen(positionJson.get("sfen") as String)
+        val board = Board().fromSfen(positionJson.get("sfen") as String)
         val matCropped = file2crop9x9Mat(srcPath, relativePoints)
-        val piecePlaceList = piecePlaceListString.split(",")
+        val prevBoard = Board().fromSfen(sfen);
         val pieceNamesList = pieceNames.split(",")
         for ((i, line) in board.board.withIndex()) {
             for ((j, koma) in line.withIndex()) {
-                if (koma == Koma.EXIST) {
-                    if (piecePlaceList[i*10+j] != "" && piecePlaceList[i*10+j].startsWith("v") == pieceNames.startsWith("v")) {
-                        board.board[i][j] = Koma.values().first { it.english == piecePlaceList[i*10+j]}
+                if (koma == Piece.EXIST) {
+                    if (prevBoard.board[i][j] != Piece.NONE && prevBoard.board[i][j].english.startsWith("v") == pieceNames.startsWith("v")) {
+                        board.board[i][j] = Piece.values().first { it == prevBoard.board[i][j]}
                     }
                     else {
-                        val pieceNameList = if (piecePlaceList[i*10+j] == "") listOf() else listOf(piecePlaceList[i*10+j]) + pieceNamesList
+                        val pieceNameList = if (prevBoard.board[i][j] == Piece.NONE) listOf() else listOf(prevBoard.board[i][j].english) + pieceNamesList
                         val targetPlaceMat = spaceCroppedMat(matCropped, listOf(j, i))
                         val detectJsonObject = JSONObject(detectPiece(dirName, pieceNameList, listOf(), targetPlaceMat))
-                        val piece = Koma.values().firstOrNull { it.english == detectJsonObject.getString("piece") };
-                        board.board[i][j] = piece ?: Koma.NONE
+                        val piece = Piece.values().firstOrNull { it.english == detectJsonObject.getString("piece") };
+                        board.board[i][j] = piece ?: Piece.NONE
                     }
                 }
             }
@@ -331,9 +326,9 @@ class ServiceActivity(private val serviceContext: Context) {
         for (i in 0..8) {
             for (j in 0..8) {
                 if (whiteCountArray[i][j] > pieceExistThreshold) {
-                    board.board[i][j] = Koma.EXIST
+                    board.board[i][j] = Piece.EXIST
                 } else {
-                    board.board[i][j] = Koma.EMPTY
+                    board.board[i][j] = Piece.EMPTY
                 }
             }
         }
@@ -371,7 +366,7 @@ class ServiceActivity(private val serviceContext: Context) {
     @RequiresApi(Build.VERSION_CODES.N)
     private fun detectPiece(dirName: String, pieceNameList: List<String>, piecesSize: List<Int>, targetPlaceMat: Mat): String {
         // for piece
-        val pieceNameListForPiece = if (pieceNameList.isNotEmpty()) pieceNameList else Koma.values().filter { it.english != "" }.map { koma -> koma.english }
+        val pieceNameListForPiece = if (pieceNameList.isNotEmpty()) pieceNameList else Piece.values().filter { it.english != "" }.map { koma -> koma.english }
         val result = pieceNameListForPiece.asSequence().withIndex().toList().map { (index, pieceName) ->
             val croppedMatList = createCroppedMat(dirName, pieceName)
             val croppedPieceMat = croppedMatList[0]

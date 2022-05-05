@@ -1,9 +1,9 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:shogi_movie_flutter/piece_upsert.dart';
-import 'package:shogi_movie_flutter/util.dart';
+import 'package:shogi_movie_flutter/util/util.dart';
+import 'package:shogi_movie_flutter/util/util_widget.dart';
 
-import 'file_controller.dart';
+import 'controller/file_controller.dart';
 
 class PieceSelectAndEdit extends StatefulWidget {
   const PieceSelectAndEdit({Key? key}) : super(key: key);

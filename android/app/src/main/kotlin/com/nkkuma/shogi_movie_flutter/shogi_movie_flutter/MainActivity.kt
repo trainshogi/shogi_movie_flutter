@@ -98,13 +98,12 @@ class MainActivity : FlutterActivity() {
                     val srcPath = call.argument<String>("srcPath").toString()
                     val dirName = call.argument<String>("dirName").toString()
                     val points = call.argument<String>("points").toString()
-                    val piecePlaceListString =
-                        call.argument<String>("piecePlaceListString").toString()
+                    val sfen = call.argument<String>("sfen").toString()
                     val pieceNames = call.argument<String>("pieceNames").toString()
                     Log.d("OpenCV", srcPath)
                     Log.d("OpenCV", dirName)
                     Log.d("OpenCV", points)
-                    Log.d("OpenCV", piecePlaceListString)
+                    Log.d("OpenCV", sfen)
                     Log.d("OpenCV", pieceNames)
 
                     thread {
@@ -112,7 +111,7 @@ class MainActivity : FlutterActivity() {
                             srcPath,
                             dirName,
                             points,
-                            piecePlaceListString,
+                            sfen,
                             pieceNames
                         )
                         runOnUiThread {

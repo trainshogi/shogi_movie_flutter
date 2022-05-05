@@ -1,8 +1,7 @@
 import 'dart:typed_data';
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:shogi_movie_flutter/util.dart';
+import 'package:shogi_movie_flutter/util/util_widget.dart';
 
 import 'frame_painter.dart';
 

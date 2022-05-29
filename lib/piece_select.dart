@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:shogi_movie_flutter/base_img_setting.dart';
+import 'package:shogi_movie_flutter/record.dart';
 import 'package:shogi_movie_flutter/util/util.dart';
 
 class PieceSelect extends StatefulWidget {
@@ -39,7 +39,7 @@ class _PieceSelectState extends State<PieceSelect> {
           onPressed: () {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => BaseImgSetting(dirName: text)),
+              MaterialPageRoute(builder: (context) => Record(dirName: text)), // BaseImgSetting(dirName: text)),
             );
           },
         )),

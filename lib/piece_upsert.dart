@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -165,6 +166,7 @@ class _PieceUpsertState extends State<PieceUpsert> {
 
   @override
   Widget build(BuildContext context) {
+    Image? image = (imageFile == null) ? null : Image.file(imageFile!); // Image.memory(imageFile!.readAsBytesSync());
     return Scaffold(
       appBar: AppBar(
         title: const Text('駒画像撮影・枠位置編集'),
@@ -177,19 +179,20 @@ class _PieceUpsertState extends State<PieceUpsert> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Padding(
-                padding: const EdgeInsets.all(10),
+                padding: const EdgeInsets.all(5),
                 child: Text(pieceNameList[pieceNameIndex].japanese + 'の画像設定'),
               ),
               Padding(
-                padding: const EdgeInsets.all(10),
+                padding: const EdgeInsets.fromLTRB(45, 0, 45, 0),
                 child: ImageAndPainter(
                     maxPointLength: -1, points: _points,
                     imageBytes: imageFile?.readAsBytesSync(),
-                    imageWidget: (imageFile == null) ? null : Image.memory(imageFile!.readAsBytesSync()),
+                    aspectRatio: 0.5,
+                    imageWidget: (image == null) ? Container() : image,
                     key: globalKeyForPainter),
               ),
               Container(
-                padding: const EdgeInsets.all(10.0),
+                padding: const EdgeInsets.all(5.0),
                 child: ElevatedButton(
                   child: const Text('カメラで撮影'),
                   onPressed: () {
@@ -200,14 +203,14 @@ class _PieceUpsertState extends State<PieceUpsert> {
               Row(
                 children: [
                   Container(
-                      padding: const EdgeInsets.all(10.0),
+                      padding: const EdgeInsets.all(5.0),
                       child: ElevatedButton(
                         child: const Text('前の駒を設定'),
                         onPressed: () => _prevPieceButtonPushed(),
                       )
                   ),
                   Container(
-                      padding: const EdgeInsets.all(10.0),
+                      padding: const EdgeInsets.all(5.0),
                       child: ElevatedButton(
                         child: const Text('次の駒を設定'),
                         onPressed: () => _nextPieceButtonPushed(),

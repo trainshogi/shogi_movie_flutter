@@ -287,7 +287,7 @@ class ServiceActivity(private val serviceContext: Context) {
     // crop image and matchTemplate pieces
     private fun getCurrentPosition(srcpath: String, relativePoints: List<List<Float>>): String {
         // static variable for get piece position
-        val pieceExistThreshold = SPACE_HEIGHT * SPACE_WIDTH * 0.03
+        val pieceExistThreshold = SPACE_HEIGHT * SPACE_WIDTH * 0.05
         val board = Board()
         board.clearBoard()
         // Bitmapを読み込み

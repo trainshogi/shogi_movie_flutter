@@ -30,7 +30,7 @@ class RecordService {
       completer.complete("");
       return completer.future;
     }
-    return recordRepository.getPiecePlace(savedFile.path, relativePoints).then((result) {
+    return recordRepository.initialPieceDetect(savedFile.path, relativePoints).then((result) {
       String currentSfen = result['sfen'];
       // if currentSfen is not correct, retake piece photo or give up
       if (!isInitialPosition(currentSfen)) {
@@ -51,7 +51,7 @@ class RecordService {
       // recognize image
       // FileController.directoryPath(widget.dirName).then((value) async {
         // get piece place
-      recordRepository.getPiecePlace(imageFilePath, boardState.relativePoints).then((map) async {
+      return recordRepository.getPiecePlace(imageFilePath, boardState.relativePoints).then((map) async {
         String piecePlace = map["sfen"];
         // print(detectPlaceJson.toString());
 

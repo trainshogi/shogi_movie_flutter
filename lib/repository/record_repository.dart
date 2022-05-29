@@ -23,6 +23,20 @@ class RecordRepository {
     return platform.invokeMethod(methodName, args);
   }
 
+  Future<Map<String, dynamic>> initialPieceDetect(
+      String imageFilePath,
+      List<Offset> relativePoints) {
+    return callInvokeMethod({
+      "platform": platformPieceDetect,
+      "methodName": 'initial_piece_detect',
+      "args": <String, String>{
+        'srcPath': imageFilePath, //imageXFile.path,
+        'points': relativePoints.toString(),
+        'dirName': directoryPath
+      }
+    }).then((value) => jsonDecode(value as String));
+  }
+
   Future<Map<String, dynamic>> getPiecePlace(
       String imageFilePath,
       List<Offset> relativePoints) {

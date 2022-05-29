@@ -11,11 +11,13 @@ class ImageAndPainter extends StatefulWidget {
   final List<Offset> points;
   final Uint8List? imageBytes;
   final Widget? imageWidget;
+  final double aspectRatio;
   const ImageAndPainter({Key? key, 
     required this.maxPointLength,
     required this.points,
     required this.imageBytes,
     required this.imageWidget,
+    required this.aspectRatio,
   }) : super(key: key);
 
   @override
@@ -70,9 +72,12 @@ class _ImageAndPainterState extends State<ImageAndPainter> {
   }
 
   Widget imageAndPainter() {
-    if (widget.imageBytes == null) {
+    if (widget.imageWidget == null) {
       return const Icon(Icons.no_sim);
     }
+    // if (widget.imageBytes == null) {
+    //   return widget.imageWidget!;
+    // }
     else {
       return Stack(
         children: [
@@ -90,10 +95,16 @@ class _ImageAndPainterState extends State<ImageAndPainter> {
             child: CustomPaint(
               painter: FramePainter(widget.points),
               // タッチを有効にするため、childが必要
-              child: Image.memory(
-                  widget.imageBytes!,
-                  color: const Color.fromRGBO(255, 255, 255, 0)
-              )
+              child: widget.imageBytes == null
+                  ? AspectRatio(
+                      aspectRatio: 1/widget.aspectRatio,
+                      child: Container(
+                          color: const Color.fromRGBO(0, 255, 255, 0)
+                      ))
+                  : Image.memory(
+                      widget.imageBytes!,
+                      color: const Color.fromRGBO(255, 255, 255, 0)
+                    )
             ),
           ),
         ],

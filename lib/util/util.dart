@@ -1,11 +1,9 @@
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../controller/file_controller.dart';
-import '../domain/board.dart';
 
 List<Offset> absolutePoints2relativePoints(List<Offset> points, Size size) {
   // get PainterSize
@@ -89,60 +87,4 @@ Future<dynamic> callInvokeMethod(Map<String, dynamic> map) {
   var methodName = map['methodName'];
   var args = map['args'];
   return platform.invokeMethod(methodName, args);
-}
-
-Future<Map<String, dynamic>> getPiecePlace(
-    MethodChannel platformPieceDetect,
-    String imageFilePath,
-    List<Offset> relativePoints,
-    String directoryPath) {
-  return callInvokeMethod({
-    "platform": platformPieceDetect,
-    "methodName": "piece_place_detect",
-    "args": {
-      'srcPath': imageFilePath,
-      'dirName': directoryPath,
-      'points': relativePoints.toString()
-    }
-  }).then((value) => jsonDecode(value as String));
-}
-
-Future<Map<String, dynamic>> onePieceDetect(
-    MethodChannel platformPieceDetect,
-    String imageFilePath,
-    List<Offset> relativePoints,
-    String directoryPath,
-    Map<String, int> moveMap,
-    String pieceNames) {
-  return callInvokeMethod({
-    "platform": platformPieceDetect,
-    "methodName": "one_piece_detect",
-    "args": {
-      'srcPath': imageFilePath,
-      'dirName': directoryPath,
-      'points': relativePoints.toString(),
-      'space': (moveMap["nextSpace"]!%10).toString() + "," + (moveMap["nextSpace"]!/10).floor().toString(),
-      'pieceNames': pieceNames
-    }
-  }).then((value) => jsonDecode(value as String));
-}
-
-Future<Map<String, dynamic>> allPieceDetect(
-    MethodChannel platformPieceDetect,
-    String imageFilePath,
-    List<Offset> relativePoints,
-    String directoryPath,
-    Board board,
-    String pieceNames) {
-  return callInvokeMethod({
-    "platform": platformPieceDetect,
-    "methodName": "all_piece_detect",
-    "args": {
-      'srcPath': imageFilePath,
-      'dirName': directoryPath,
-      'points': relativePoints.toString(),
-      'sfen': board.toSfen(),
-      'pieceNames': pieceNames
-    }
-  }).then((value) => jsonDecode(value as String));
 }

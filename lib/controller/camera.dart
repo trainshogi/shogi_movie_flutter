@@ -1,9 +1,13 @@
+import 'dart:async';
+import 'dart:ffi';
+
 import 'package:camera/camera.dart';
 import 'package:flutter/cupertino.dart';
 
 class Camera extends StatefulWidget {
   final CameraController controller;
-  const Camera({Key? key, required this.controller}) : super(key: key);
+  final Completer<String> initializeCompleter;
+  const Camera({Key? key, required this.controller, required this.initializeCompleter}) : super(key: key);
 
   @override
   _CameraState createState() => _CameraState();
@@ -13,12 +17,15 @@ class _CameraState extends State<Camera> {
   @override
   void initState() {
     super.initState();
-    widget.controller.initialize().then((_) {
-      if (!mounted) {
-        return;
-      }
-      setState(() {});
-    });
+    if (!widget.controller.value.isInitialized){
+      widget.controller.initialize().then((_) {
+        widget.controller.setFlashMode(FlashMode.torch);
+        if (!mounted) {
+          return;
+        }
+        widget.initializeCompleter.complete("initialized");
+      });
+    }
   }
 
   @override
@@ -28,7 +35,7 @@ class _CameraState extends State<Camera> {
     }
 
     return AspectRatio(
-      aspectRatio: 0.7,// 1/widget.controller.value.aspectRatio,
+      aspectRatio: 1/widget.controller.value.aspectRatio,
       child: CameraPreview(widget.controller),
     );
   }

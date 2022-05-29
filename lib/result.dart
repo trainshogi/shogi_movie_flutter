@@ -55,9 +55,9 @@ class _ResultState extends State<Result> {
                 child: ElevatedButton(
                   child: const Text('最初に戻る'),
                   onPressed: () {
-                    //　初期画面に戻る(4画面前)
+                    //　初期画面に戻る(3画面前)
                     int count = 0;
-                    Navigator.popUntil(context, (_) => count++ >= 4);
+                    Navigator.popUntil(context, (_) => count++ >= 3);
                   },
                 )
               ),
